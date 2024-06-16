@@ -3,13 +3,13 @@ pwd()
 using Revise, WormQMC
 using EDTools, LinearAlgebra, Statistics, SparseArrays, Dates, DelimitedFiles
 using Logging
-Logging.disable_logging(Logging.Info)
+# Logging.disable_logging(Logging.Info)
 
 # Example 3×3 hard-core Hubbard
 H = BH_Square(nmax=1, Lx=3, Ly=4,
     J=1.0, V=0.25, μ=1.0
 )
-β = 1.5
+β = 10.0
 
 function BH_Square_ED(H::BH_Square, β::f64)
     L = Int.((H.Lx, H.Ly))
@@ -86,13 +86,18 @@ end
 
 update_const = UpdateConsts(0.5, 2.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
-time_ther = Second(20)
+time_ther = Second(60)
 time_simu = Second(120)
 x = Wsheet(β, H)
-m = WormMeasure(x, update_const)
+m = WormMeasure(x, update_const; green_lmax=1)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
+
+using BenchmarkTools
+@btime worm_cycle!($x, $H, $update_const, $cycle_prob)
 G0 = normalize_density_matrix(m.Gfunc)[:,:,1,1]
 Cij = Cab(m.Sfact,1,1)
+using Plots
+heatmap(Cij)
 
 # Benchmark with ED
 res_ED = BH_Square_ED(H, β)
@@ -105,7 +110,9 @@ println("┌ DensMat")
 writedlm(stdout, G0)
 println("┌ DensCor")
 writedlm(stdout, Cij)
+end
 
+begin
 @info "ED result"
 for k ∈ keys(res_ED)
     v = getfield(res_ED, k)

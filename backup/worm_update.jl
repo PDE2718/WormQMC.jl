@@ -31,17 +31,15 @@ function CycleProb(P_move_worm, P_insert_kink, P_delete_kink, P_glue_worm)::Cycl
 end
 
 function insert_worm!(x::Wsheet, w::Worm,
-    H::BH_Parameters, Q::UpdateConsts)::Worm
+    H::BH_Parameters{znbs}, Q::UpdateConsts)::Worm where {znbs}
     if w.loc ≠ _at_null
         return w
     end
     β::f64 = x.β
     i::IndexType = rand(eachindex(x))
-    t::f64 = β * rand()
+    t::f64 = rand(Uniform(nextfloat(0., +2), nextfloat(β, -2)))
     l::Wline = x[i]
     i_after::Int = vindex(l, t)
-    # @assert l[i_after].t ≠ t
-    # @assert i_after ≤ length(l)
     e_after::Element = l[i_after]
     n0::StateType = e_after.n_L
     D::StateType = randsign() # relative direction for b to b̂
@@ -50,6 +48,15 @@ function insert_worm!(x::Wsheet, w::Worm,
     if np < StateType(0) || np > H.nmax || !(metro(P_acc)) # case insertion failed!
         return w
     end # otherwise accepted
+    nbs::NTuple{znbs,Int} = get_nbs(H, i)
+    if close_to_any(l, t)
+        return w
+    end
+    for inb ∈ nbs
+        if close_to_any(x[inb], t)
+            return w
+        end
+    end
     b = Element(t, i, IndexType(0),
         D == i8(+1) ? n0 : np,
         D == i8(+1) ? np : n0,
@@ -66,7 +73,7 @@ function insert_worm!(x::Wsheet, w::Worm,
 end
 
 function glue_worm!(x::Wsheet, w::Worm,
-    H::BH_Parameters, Q::UpdateConsts)::Worm
+    H::BH_Parameters{znbs}, Q::UpdateConsts)::Worm where {znbs}
     if w.loc == _at_stop && metro(inv(2 * Q.Cw * max(w.head.n_L, w.head.n_R))) # accept ratio
         # @assert w.δ == +1 || w.δ == -1
         # @assert w.head.i == w.tail.i
@@ -87,7 +94,6 @@ function move_worm!(x::Wsheet, w::Worm,
     if w.loc == _at_null
         return w
     end
-
     tail::Element = w.tail
     head::Element = w.head
     D::StateType = randsign()
@@ -96,9 +102,8 @@ function move_worm!(x::Wsheet, w::Worm,
     loc::WormLocation = w.loc
     i::IndexType = head.i
     li::Wline = x[head.i]
-
     if (D*δ == -1) # 
-        @assert loc ≠ _at_free "δ≠0 but free???"
+        # @assert loc ≠ _at_free "δ≠0 but free???"
         if loc == _at_stop || loc == _at_kink
             # cannot pass either tail or nb kink
             return w
@@ -137,7 +142,7 @@ function move_worm!(x::Wsheet, w::Worm,
         end
     end
 
-    @assert D * δ == +1 || D*δ == 0
+    # @assert D * δ == +1 || D*δ == 0
     nbs::NTuple{znbs, Int} = get_nbs(H, i)
     t0::f64 = head.t
     head_id::Int = vindex(li, head.t)
@@ -163,10 +168,8 @@ function move_worm!(x::Wsheet, w::Worm,
         # however, the head cannot pass the tail
         if head.t < tail.t < v_near.t
             v_near = tail
-            @assert tail.i ≠ head.i # otherwise, we have tail == v_near already
+            # @assert tail.i ≠ head.i # otherwise, we have tail == v_near already
         end
-
-
         if Ef ≥ Eb
             λ₋ += ΔE
         else
@@ -210,7 +213,7 @@ function move_worm!(x::Wsheet, w::Worm,
         # however, the head cannot pass the tail
         if v_near.t < tail.t < head.t
             v_near = tail
-            @assert tail.i ≠ head.i # otherwise, we have tail == v_near already
+            # @assert tail.i ≠ head.i # otherwise, we have tail == v_near already
         end
 
         if Ef ≥ Eb
@@ -256,13 +259,11 @@ function insert_kink!(x::Wsheet, w::Worm,
     i::IndexType = head.i
     nbs::NTuple{znbs, Int} = get_nbs(H, i)
     j::IndexType = rand(nbs) |> IndexType
-
     B::StateType = StateType(head.op)
     li::Wline = x[i]
     lj::Wline = x[j]
-    jqL, jqR = vindex_around(lj, head.t, false)
-    nj::StateType = lj[jqR].n_L
-    # @assert nj == lj[jqL].n_R
+    jqL::Int, jqR::Int = vindex_around(lj, head.t, false)
+    nj::StateType = lj[jqR].n_L # @assert nj == lj[jqL].n_R
     nmid::StateType = nj - B * D
     if nmid > H.nmax || nmid < i8(0)
         return w
@@ -270,11 +271,16 @@ function insert_kink!(x::Wsheet, w::Worm,
     Wk::StateType = max(nj, nmid)
     P_acc::f64 = 2 * znbs * Wk * bond_weight(H,i,j) * Q.P_del2ins
     if metro(P_acc)
-        iq = vindex(li, head.t)
-        # @assert li[iq] == head
+        # for inb ∈ nbs
+        #     if close_to_any(x[inb], head.t)
+        #         return w
+        #     end
+        # end
+        iq = vindex(li, head.t) # @assert li[iq] == head
 
         # first set head as part of K
-        li[iq] = @set head.j = j
+        li[iq] = Element(head.t, head.i, j, head.n_L, head.n_R, head.op)
+        # @set head.j = j
 
         Kj = Element(head.t, j, i,
             D > 0 ? nj : nmid,
@@ -326,7 +332,6 @@ function delete_kink!(x::Wsheet, w::Worm, H::BH_Parameters{znbs}, Q::UpdateConst
     id_Kj::Int = vindex(lj, Ki.t)
     Kj::Element = lj[id_Kj]
     Wk::StateType = max(head.n_L, head.n_R)
-    # znb::Int = get_nbs(H, j) |> length
     P_acc::f64 = inv(2 * znbs * Wk * bond_weight(H, i, j) * Q.P_del2ins)
     if metro(P_acc)
         head_new::Element = Element(Kj.t, Kj.i, IndexType(0), Kj.n_L, Kj.n_R, head.op)

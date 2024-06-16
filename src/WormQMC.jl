@@ -1,12 +1,14 @@
 module WormQMC
-using LinearAlgebra, Random, Statistics, FFTW, Dates, Accessors, LegendrePolynomials
-export BH_Parameters, BH_Square
+using LinearAlgebra, Random, Distributions, Statistics, FFTW, Dates, Accessors, LegendrePolynomials
+using Base.Cartesian.Base:@ntuple, @nexprs, @nextract
+const worm_debug::Bool = false
 
 include("element.jl")
 include("accumulator.jl")
 include("hamiltionian.jl")
 include("green_func.jl")
-include("worm_update.jl")
+include("update_para.jl")
+include("update_body.jl")
 include("measurement.jl")
 include("onesimu.jl")
 

@@ -104,17 +104,18 @@ function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch}, bond_buffe
     V̄ /= x.β
     K̄ = -(Nkink÷2) / x.β
     Ē = Ū + μ̄ + V̄ + K̄
-    return (f64(Npar), Ē, K̄, Ū, μ̄, V̄)
+    return (f64(Npar), f64(abs2(Npar)), Ē, K̄, Ū, μ̄, V̄)
 end
 @kwdef struct SimpleMeasure
     N::Accum{f64} = Accum(0.)
+    N2::Accum{f64} = Accum(0.)
     E::Accum{f64} = Accum(0.)
     K::Accum{f64} = Accum(0.)
     U::Accum{f64} = Accum(0.)
     μ::Accum{f64} = Accum(0.)
     V::Accum{f64} = Accum(0.)
 end
-function push!(M::SimpleMeasure, one_measure::NTuple{6, f64})
+function push!(M::SimpleMeasure, one_measure::NTuple{7, f64})
     @inbounds for (i, m) ∈ enumerate(one_measure)
         push!(getfield(M, i)::Accum{f64}, m)
     end

@@ -44,11 +44,6 @@ function Base.show(io::IO, m::GreenFuncBin)
     println(io, "│ G0 → $(summary(m.G0))")
     println(io, "└ Gl → $(summary(m.Gl))")
 end
-# HH = BH_Square(Lx=3,Ly=3)
-# xx = Wsheet(100., HH)
-# GG = GreenFuncBin(xx, 10; is_full = false)
-# GG.Gl
-# GG.G0
 
 @inline function cal_Δτ(τ::f64, τ̂::f64, β::f64)::f64
     return mod(τ̂ - τ, β)
@@ -56,29 +51,55 @@ end
 @inline function xτmap(Δτ::f64, β::f64)::f64
     return (2Δτ/β) - 1.
 end
-Base.@propagate_inbounds function accum_green!(G::GreenFuncBin, w::Worm, H::BH_Parameters)::Nothing
-    b::Element = b̂::Element = w.head::Element
-    if w.head.op == b_
-        b̂ = w.tail
-    else
-        b = w.tail
+
+function accum_green!(G::GreenFuncBin,
+    b::Element, b̂::Element, loc::WormLocation, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters}
+    if b.op == b̂_
+        c = b
+        b = b̂
+        b̂ = c
     end
+    @assert b.op == b_ && b̂.op == b̂_
     Gid = site_diff(H, b.i, b̂.i)
     #measure density matrix
-    @inbounds begin
-    if w.loc == _at_green
-        G.G0[Gid] += complex(1,0)
-    elseif w.loc == _at_stop
+    if loc == _at_green
+        G.G0[Gid] += complex(1, 0)
+    elseif loc == _at_stop
         G.G0[Gid] += (b̂.t > b.t) ? complex(1, 0) : complex(0, 1)
-    elseif w.loc == _at_free && (G.is_full || Gid[1]==Gid[2]==1)
+    elseif loc == _at_free && (G.is_full || Gid[1] == Gid[2] == 1)
         Δτ = cal_Δτ(b.t, b̂.t, G.β)
         x = xτmap(Δτ, G.β)
         collectPl!(G._Pl, x, norm=Val(:schmidt)) # norm with √(2l+1)
         G.Gl[Gid] .+= G._Pl
     end
-    end
     return nothing
 end
+function accum_green!(G::GreenFuncBin, w::Worm, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters} 
+    accum_green!(G, w.tail, w.head, w.loc, H)
+end
+# function accum_green!(G::GreenFuncBin, w::Worm, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters}
+#     b::Element = b̂::Element = w.head::Element
+#     if w.head.op == b_
+#         b̂ = w.tail
+#     else
+#         b = w.tail
+#     end
+#     Gid = site_diff(H, b.i, b̂.i)
+#     #measure density matrix
+#     @inbounds begin
+#         if w.loc == _at_green
+#             G.G0[Gid] += complex(1, 0)
+#         elseif w.loc == _at_stop
+#             G.G0[Gid] += (b̂.t > b.t) ? complex(1, 0) : complex(0, 1)
+#         elseif w.loc == _at_free && (G.is_full || Gid[1] == Gid[2] == 1)
+#             Δτ = cal_Δτ(b.t, b̂.t, G.β)
+#             x = xτmap(Δτ, G.β)
+#             collectPl!(G._Pl, x, norm=Val(:schmidt)) # norm with √(2l+1)
+#             G.Gl[Gid] .+= G._Pl
+#         end
+#     end
+#     return nothing
+# end
 
 function cal_Gτ(G::GreenFuncBin, τgrid, lmax::Int=-1)
     Gτs = [zeros(length(τgrid)) for i ∈ CartesianIndices(G.Gl)]
@@ -121,27 +142,6 @@ function normalize_density_matrix(Dmat::Array{Complex{Int},4}, ishardcore=true)
     end
     return Dmat_n
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # function normalize_density_matrix(Dmat, ishardcore=true)
 #     d = Dmat[diagind(Dmat)]

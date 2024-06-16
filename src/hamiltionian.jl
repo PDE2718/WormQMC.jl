@@ -11,6 +11,9 @@ abstract type BH_Parameters{znbs} end
     V::f64 = 1.
     μ::f64 = 0.
 end
+N_nbs(::Type{BH_Square})::Int = 4
+N_wldim(::Type{BH_Square})::Int = 2
+
 function get_nbs(H::BH_Square, i::Int)::NTuple{4, Int}
     Lx = Int(H.Lx)
     Ly = Int(H.Ly)
@@ -56,6 +59,9 @@ end
     V::f64 = 1.0 # off site repulsion, set to a large value for shaped hard core
     μ::f64 = 0.0 # chemical potential
 end
+N_nbs(::Type{BH_Pyroch})::Int = 6
+N_wldim(::Type{BH_Pyroch})::Int = 3
+
 function get_nbs(H::BH_Pyroch, i::Int)::NTuple{6,Int}
     Lx = Int(H.Lx)
     Ly = Int(H.Ly)

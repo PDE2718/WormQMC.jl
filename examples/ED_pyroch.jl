@@ -9,9 +9,9 @@ using Logging
 H = BH_Pyroch(nmax=1, Lx=2, Ly=3,
     J1=1.0, J2=1.0, V=0.25, μ=1.0
 )
-β = 1.5
+β = 4.0
 
-function BH_Square_ED(H::BH_Pyroch, β::f64)
+function BH_ED(H::BH_Pyroch, β::f64)
     L = Int.((H.Lx, H.Ly, 2))
     ϕ = FBbasis(prod(L), 0, :hcboson, false)
     Lids = LinearIndices(L)
@@ -113,10 +113,8 @@ x = Wsheet(β, H)
 m = WormMeasure(x, update_const)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
 G0 = normalize_density_matrix(m.Gfunc)
-# Cij = Cab(m.Sfact,1,1)
-
 # Benchmark with ED
-res_ED = BH_Square_ED(H, β)
+res_ED = BH_ED(H, β)
 
 begin
 @info "QMC result"

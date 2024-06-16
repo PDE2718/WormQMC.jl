@@ -83,15 +83,3 @@ function simple_simu(H::BH_Parameters, β::f64;
     #     update_statistics,
     # )
 end
-
-time()
-time_ns()
-using BenchmarkTools
-function benchmark_time()
-    time()
-    return nothing
-end
-@btime benchmark_time()
-
-Timetic()
-(tt2 - tt1)*1e-9
