@@ -5,7 +5,7 @@
     znbs::Int = N_nbs(H)
     mes_green = (T_G == GreenFuncBin)
 
-    @info "compiling update for $(Ham) (Ndim = $(Ndim), znbs = $(znbs)), GF = $(mes_green)"
+    # println("compiling update for $(Ham) (Ndim = $(Ndim), znbs = $(znbs)), GF = $(mes_green)")
     quote
         $(if mes_green quote G.insertion_trial += 1 end end)
         tail::Element = Element()
