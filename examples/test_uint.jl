@@ -185,3 +185,22 @@ Base.JLOptions().opt_level
 Base.@nexprs 5 i->begin
     xx_i = i
 end
+
+
+using Random
+using RandomNumbers
+using BenchmarkTools
+# const 
+const myrng::Xoshiro = Random.Xoshiro()
+myrng2 = RandomNumbers.()
+Random.default_rng() |> typeof
+@btime Random.default_rng()
+function randfill1(A, rng=Random.default_rng())
+    for i ∈ eachindex(A)
+        A[i] = rand(rng)
+    end
+end
+
+A = rand(1000)
+@btime randfill1($A)
+@btime randfill1($A, $myrng2)

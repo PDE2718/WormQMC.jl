@@ -10,7 +10,6 @@ const StateType::Type = Int8
 const IndexType::Type = Int16
 @inline metro(p)::Bool = rand() < p
 @inline randsign()::Int8 = rand(Bool) ? Int8(1) : Int8(-1)
-
 function dumptoNamedTuple(x)
     keys = fieldnames(typeof(x))
     vals = [getfield(x, k) for k ∈ keys]
