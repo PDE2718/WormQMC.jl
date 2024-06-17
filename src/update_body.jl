@@ -55,7 +55,7 @@
 
         ################################### begin worm cycle
         # @label CYCLE_START🔁
-        for cycle_iter ∈ 1:10_000_000_000
+        for cycle_iter ∈ 1:1_000_000_000_000
             $(if mes_green quote accum_green!(G, tail, head, loc, H) end end)
             dice = rand()
             if dice < Y.AP_move_worm # [MOVE_WORM]
@@ -73,7 +73,7 @@
                         δ = -δ
                     else #if loc == _at_dummy
                         dummy::Element = li[end]
-                        if δ == +1 && D == -1
+                        if δ == i8(+1) && D == i8(-1)
                             @assert head == li[1] && head.t == nextfloat(0.0)
                             head <<= prevfloat(β)
                             dummy = dummy_element(β, dummy.i, head.n_R)
@@ -247,6 +247,7 @@
                     head = head_new
                     δ = D
                     loc = _at_kink
+                    cycle_size += 1
                 end
 
             elseif dice < Y.AP_delete_kink # [DELETE_KINK]
@@ -302,7 +303,7 @@
                 end
             end
         end
-        error("loop size exceeds limit, indicating an error")
+        error("loop size exceeds limit, something unusual happened!")
         return cycle_size
     end
 end
