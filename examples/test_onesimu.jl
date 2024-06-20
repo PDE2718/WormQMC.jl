@@ -110,3 +110,33 @@ mean(res.simple.N) / (H.Lx * H.Ly) / 2
 cal_Gτ(res.Gfunc, [0.0, 1.0])
 (res |> Base.summarysize) / 8
 (rand(100, 100) |> Base.summarysize) / 8
+
+isbitstype(Element)
+qq = [Element() for i ∈ 1:3]
+sizeof(Element())
+sizeof(qq)
+
+reinterpret(Tuple{Int64,Int64}, qq)
+reinterpret(Float64,reinterpret(NTuple{15, UInt8}, Element() << -1000.)[1:8])
+
+using FieldFlags
+@bitfield mutable struct foo
+    a:64
+    b:8
+    c:16
+    d:1
+end
+@bitfield struct bar
+    a:64
+    b:8
+    c:16
+    d:1
+end
+
+sizeof()
+xx = foo(10, 3, 2, 1)
+@btime $(xx).a = rand(UInt64)
+
+@btime Float64(MyBits(1,2).a)
+using BenchmarkTools
+

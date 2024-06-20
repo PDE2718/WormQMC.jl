@@ -4,7 +4,6 @@
     @assert Ndim == N_wldim(H)
     znbs::Int = N_nbs(H)
     mes_green = (T_G == GreenFuncBin)
-
     # println("compiling update for $(Ham) (Ndim = $(Ndim), znbs = $(znbs)), GF = $(mes_green)")
     quote
         $(if mes_green quote G.insertion_trial += 1 end end)
@@ -112,8 +111,13 @@
                     Ef = Eb
                     Eb = ΔE
                 end
+                # [TODO] add check for illegal configs?
+                if Ef > Ecutoff || Eb > Ecutoff
+                    @assert !(Ef > Ecutoff && Eb > Ecutoff) "problemastic update"
+                    @assert loc ≠ _at_free
+                    continue
+                end
                 ΔE = abs(Ef - Eb)
-
                 ##################################### try to move
                 if D == StateType(+1) # move forward -->
                     @nexprs $znbs k -> begin
@@ -132,8 +136,8 @@
                     else
                         λ₊ += ΔE
                     end
-                    t_new = t + randexp() / λ₊
-                    t_bound = prevfloat(v_near.t, 4)
+                    t_new = nextfloat(t + randexp() / λ₊, +4)
+                    t_bound = nextfloat(v_near.t, -4)
                     if (t_new < t_bound) && metro(δ == 0 ? (λ₋ / λ₊) : (1.0 / λ₊))
                         # no interaction
                         head <<= t_new
@@ -176,8 +180,10 @@
                     else
                         λ₊ += ΔE
                     end
-                    t_new = t - randexp() / λ₊
-                    t_bound = nextfloat(v_near.t, 4)
+                    # t_new = t - randexp() / λ₊
+                    # t_bound = nextfloat(v_near.t, 4)
+                    t_new = nextfloat(t - randexp() / λ₊, -4)
+                    t_bound = nextfloat(v_near.t, +4)
                     if (t_new > t_bound) && metro(δ == 0 ? (λ₋ / λ₊) : (1.0 / λ₊))
                         # no interaction
                         head <<= t_new

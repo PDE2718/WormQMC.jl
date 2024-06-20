@@ -4,6 +4,8 @@
     Eoff::f64 = 1.0
     P_del2ins::f64 = 1.0 # ratio p_delete/p_insert
 end
+const Ecutoff::f64 = 1e3
+
 @kwdef struct CycleAccumProb
     AP_move_worm::f64   = 0.25
     AP_insert_kink::f64 = 0.50
