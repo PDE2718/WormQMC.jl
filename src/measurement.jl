@@ -15,6 +15,7 @@ import Base: push!, empty!, merge
 # get_slice(li::Wline, τ::f64)::StateType = element_around(li, τ, +1).n_L
 
 function measure_site(l::Wline, U::f64, μ::f64)::NTuple{2,f64}
+    @assert issorted(l)
     t::f64 = 0.
     n::StateType = l[end].n_R
     # β::f64 = l[end].t
@@ -65,9 +66,6 @@ function measure_bond(li::Wline, lj::Wline, Vij::f64, bond_buffer::Wline)::f64
     j::IndexType = lj[end].i
     Δt::f64 = 0.0
     V_val::f64 = 0.
-    @static if worm_debug == true
-        @assert issorted(li) && issorted(lj)
-    end
     merge_sorted!(bond_buffer, li, lj)
     for e ∈ bond_buffer
         if e.t > t
