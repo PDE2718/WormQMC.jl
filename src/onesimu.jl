@@ -1,8 +1,9 @@
 function onesimu!(x::Wsheet, H::Ham, m::WormMeasure,
     update_const::UpdateConsts,
     cycle_prob::CycleAccumProb,
-    time_ther::TimePeriod,
-    time_simu::TimePeriod,
+    time_ther::Second,
+    time_simu::Second,
+    sweep_size_limit::Tuple{Int,Int} = (1,100),
     )::Nothing where {Ham <: BH_Parameters}
     # prepare buffers measurements
     @assert m.Gfunc.Cw == update_const.Cw "Gfunc Cw is not consistent with the update_const!"
@@ -24,7 +25,7 @@ function onesimu!(x::Wsheet, H::Ham, m::WormMeasure,
     end
     average_cycle_size::f64 = total_cycle_size / N_cycle
     sweep_size = ceil(Int, sum(length, x.wl) / average_cycle_size)
-    @assert sweep_size > 0
+    sweep_size = clamp(sweep_size, sweep_size_limit...)
 
     @info """Thermalization Statistics
     [total_cycle_size] = $(total_cycle_size)

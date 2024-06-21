@@ -205,10 +205,3 @@ println(
 # plot!(τgrid, Ḡτs, label=L"\bar{G}_{ii}(\tau)")
 # plot!(τgrid, G12s, label=L"G_{12}(\tau)")
 # ylims!(0.1, 0.4)
-
-norm_condition(u, t, integrator) = t % 0.1
-norm_affect!(integrator) = normalize!(integrator.u)
-norm_cb = DiscreteCallback(norm_condition, norm_affect!)
-saving_cb
-cbs = CallbackSet(norm_cb, saving_cb)
-

@@ -54,7 +54,7 @@
 
         ################################### begin worm cycle
         # @label CYCLE_START🔁
-        for cycle_iter ∈ 1:1_000_000_000_000
+        for cycle_iter ∈ 1:100_000_000_000_000
             $(if mes_green quote accum_green!(G, tail, head, loc, H) end end)
             dice = rand()
             if dice < Y.AP_move_worm # [MOVE_WORM]
