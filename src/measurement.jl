@@ -1,23 +1,23 @@
 import Base: push!, empty!, merge
-function get_slice!(ψ::Matrix{T}, x::Wsheet, τ::f64 = 0.) where {T<:Real}
-    if iszero(τ)
-        for i ∈ eachindex(ψ, x.wl)
-            ψ[i] = x[i][end].n_L
-        end
-    else
-        @assert 0. < τ ≤ β
-        for i ∈ eachindex(ψ, x.wl)
-            ψ[i] = element_around(x[i], τ, +1).n_L
-        end
-    end
-    return nothing
-end
-get_slice(li::Wline)::StateType = li[end].n_L
-get_slice(li::Wline, τ::f64)::StateType = element_around(li, τ, +1).n_L
+# function get_slice!(ψ::Matrix{T}, x::Wsheet, τ::f64 = 0.) where {T<:Real}
+#     if iszero(τ)
+#         for i ∈ eachindex(ψ, x.wl)
+#             ψ[i] = x[i][end].n_L
+#         end
+#     else
+#         for i ∈ eachindex(ψ, x.wl)
+#             ψ[i] = element_around(x[i], τ, +1).n_L
+#         end
+#     end
+#     return nothing
+# end
+# get_slice(li::Wline)::StateType = li[end].n_L
+# get_slice(li::Wline, τ::f64)::StateType = element_around(li, τ, +1).n_L
+
 function measure_site(l::Wline, U::f64, μ::f64)::NTuple{2,f64}
     t::f64 = 0.
     n::StateType = l[end].n_R
-    β::f64 = l[end].t
+    # β::f64 = l[end].t
     Δt::f64 = 0.
     U_val::f64 = 0.
     μ_val::f64 = 0.
@@ -63,17 +63,19 @@ function measure_bond(li::Wline, lj::Wline, Vij::f64, bond_buffer::Wline)::f64
     nj::StateType = lj[end].n_R
     i::IndexType = li[end].i
     j::IndexType = lj[end].i
-    β::f64 = li[end].t
     Δt::f64 = 0.0
-    # zi::Int = zj::Int = 1
     V_val::f64 = 0.
-    @assert issorted(li) && issorted(lj)
+    @static if worm_debug == true
+        @assert issorted(li) && issorted(lj)
+    end
     merge_sorted!(bond_buffer, li, lj)
     for e ∈ bond_buffer
-        Δt = e.t - t
-        V_val += Δt * Vij * ni * nj
-        t = e.t
-        if t == β
+        if e.t > t
+            Δt = e.t - t
+            V_val += Δt * Vij * ni * nj
+            t = e.t
+        end
+        if t == 1.0
             break
         elseif e.i == i
             ni = e.n_R
@@ -99,10 +101,7 @@ function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch}, bond_buffe
         Npar += li[end].n_R
     end
     @assert Nkink |> iseven
-    Ū /= x.β
-    μ̄ /= x.β
-    V̄ /= x.β
-    K̄ = -(Nkink÷2) / x.β
+    K̄ = - (Nkink÷2) / x.β
     Ē = Ū + μ̄ + V̄ + K̄
     return (f64(Npar), f64(abs2(Npar)), Ē, K̄, Ū, μ̄, V̄)
 end
@@ -122,14 +121,14 @@ function push!(M::SimpleMeasure, one_measure::NTuple{7, f64})
     return nothing
 end
 function empty!(M::SimpleMeasure)
-    @inbounds for i ∈ 1:6
+    for i ∈ 1:fieldcount(SimpleMeasure)
         empty!(getfield(M, i)::Accum{f64})
     end
     return nothing
 end
 function merge(M1::SimpleMeasure, M2::SimpleMeasure)
     return SimpleMeasure(
-        Tuple(merge(getfield(M1,i), getfield(M2,i)) for i ∈ 1:6)...)
+        Tuple(merge(getfield(M1,i), getfield(M2,i)) for i ∈ 1:fieldcount(SimpleMeasure))...)
 end
 
 ### Measurement for the structure factor / Density Correlation
@@ -282,13 +281,13 @@ function push!(M::WindingMeasure, WxWy::NTuple{2,Int})
     return nothing
 end
 function empty!(M::WindingMeasure)
-    @inbounds for i ∈ 1:3
+    for i ∈ 1:fieldcount(WindingMeasure)
         empty!(getfield(M, i)::Accum{f64})
     end
     return nothing
 end
 function merge(M1::WindingMeasure, M2::WindingMeasure)
-    return WindingMeasure(Tuple(merge(getfield(M1, i), getfield(M2, i)) for i ∈ 1:3)...)
+    return WindingMeasure(Tuple(merge(getfield(M1, i), getfield(M2, i)) for i ∈ 1:fieldcount(WindingMeasure))...)
 end
 
 struct WormMeasure

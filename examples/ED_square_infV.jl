@@ -6,8 +6,8 @@ using Logging
 # Logging.disable_logging(Logging.Info)
 
 # Example 3×3 hard-core Hubbard
-H = BH_Square(nmax=1, Lx=5, Ly=4, J=1.0, V=1e6, μ=0.2)
-β = 24.0
+H = BH_Square(nmax=1, Lx=5, Ly=4, J=1.0, V=1e5, μ=0.0)
+β = 16.0
 
 begin
     function nextPXPconfig!(conf, n, G)
@@ -124,12 +124,12 @@ function BH_Square_ED(H::BH_Square, β::f64)
     return res_dict
 end
 
-update_const = UpdateConsts(1.0, 2.0, 1.0)
+update_const = UpdateConsts(0.5, 2.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
 # time_ther = Second(Minute(20))
 # time_simu = Second(Minute(60))
-time_ther = Second(20)
-time_simu = Second(60)
+time_ther = Second(600)
+time_simu = Second(3000)
 x = Wsheet(β, H)
 m = WormMeasure(x, update_const; green_lmax=1)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
@@ -205,3 +205,4 @@ println(
 # plot!(τgrid, Ḡτs, label=L"\bar{G}_{ii}(\tau)")
 # plot!(τgrid, G12s, label=L"G_{12}(\tau)")
 # ylims!(0.1, 0.4)
+

@@ -61,22 +61,3 @@ function onesimu!(x::Wsheet, H::Ham, m::WormMeasure,
     """
     return nothing
 end
-
-# let i = 1
-#     @label st
-#     i += 2
-#     if i < 10
-#         println("i=$i")
-#         @goto st
-#     end
-# end
-
-
-# time()
-# time_ns()
-# using BenchmarkTools
-# function benchmark_time()
-#     time()
-#     return nothing
-# end
-# @btime benchmark_time()

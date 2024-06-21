@@ -44,12 +44,12 @@ import Base: <<
 const ElePair::Type = Pair{Element,Element} # two related Elements
 const Wline::Type = Vector{Element}
 # Note that : For each wl the last element must be I_ at β (dummy element)
-dummy_element(β::f64, i::IndexType, n0::StateType) = Element(β, i, IndexType(0), n0, n0, I_)
-empty_wline(i0::Integer, β::f64, n0::Integer) = Element[dummy_element(β,IndexType(i0),n0)]
+dummy_element(i::IndexType, n0::StateType) = Element(1., i, IndexType(0), n0, n0, I_)
+empty_wline(i0::Integer, n0::Integer) = Element[dummy_element(IndexType(i0),n0)]
 is_bond(x::Element)::Bool = iszero(e.j)
 
 function display_Wline(l::Wline)
-    println("Wline : i = $(l[end].i), β = $(l[end].t)")
+    println("Wline : i = $(l[end].i), τ/β = $(l[end].t)")
     for e ∈ l
         println("ψ $(e.n_L)→$(e.n_R), op:$(e.op), t=$(e.t)")
     end
@@ -98,7 +98,7 @@ struct Wsheet{N}
 end
 function Wsheet(β::f64, ψ0::AbstractArray{<:Integer,N})::Wsheet where {N}
     @assert β > 0
-    return Wsheet(β,[empty_wline(i, β, ψ0[i]) for i ∈ LinearIndices(ψ0)])
+    return Wsheet(β,[empty_wline(i, ψ0[i]) for i ∈ LinearIndices(ψ0)])
 end
 import Base: getindex, eachindex, size, LinearIndices, CartesianIndices
 function getindex(X::Wsheet{N}, i::Integer)::Wline where {N}

@@ -19,7 +19,7 @@
         ############################# [INSERT_WORM] #################################
         #############################################################################
         i::IndexType = j::IndexType = rand(eachindex(x))
-        t::f64 = rand(Uniform(nextfloat(0.0, +2), nextfloat(β, -2)))
+        t::f64 = clamp(rand(), nextfloat(0.,2), prevfloat(1.,2))
         li::Wline = lj::Wline = x[i]
         head_id::Int = del_id::Int = vindex(li, t)
         n0::StateType = li[head_id].n_L
@@ -73,16 +73,16 @@
                     else #if loc == _at_dummy
                         dummy::Element = li[end]
                         if δ == i8(+1) && D == i8(-1)
-                            @assert head == li[1] && head.t == nextfloat(0.0)
-                            head <<= prevfloat(β)
-                            dummy = dummy_element(β, dummy.i, head.n_R)
+                            @assert head == li[1] && head.t == nextfloat(0.)
+                            head <<= prevfloat(1.)
+                            dummy = dummy_element(dummy.i, head.n_R)
                             li[end] = head
                             push!(li, dummy)
                             popfirst!(li)
                         else  # if δ == -1 && D == +1
-                            @assert head == li[end-1] && head.t == prevfloat(β)
+                            @assert head == li[end-1] && head.t == prevfloat(1.)
                             head <<= nextfloat(0.0)
-                            dummy = dummy_element(β, dummy.i, head.n_L)
+                            dummy = dummy_element(dummy.i, head.n_L)
                             pushfirst!(li, head)
                             pop!(li)
                             li[end] = dummy
@@ -136,16 +136,17 @@
                     else
                         λ₊ += ΔE
                     end
-                    t_new = nextfloat(t + randexp() / λ₊, +4)
+                    t_new = nextfloat(t + randexp() / (β * λ₊), +4)
                     t_bound = nextfloat(v_near.t, -4)
-                    if (t_new < t_bound) && metro(δ == 0 ? (λ₋ / λ₊) : (1.0 / λ₊))
+                    if (t_new < t_bound) && metro(δ == 0 ? (λ₋/λ₊) : inv(λ₊))
                         # no interaction
                         head <<= t_new
                         li[head_id] = head
                         δ = i8(0)
                         loc = _at_free
                         cycle_size += 1
-                    elseif (t_new ≥ t_bound) && metro(δ == 0 ? (λ₋ / 1.0) : (1.0 / 1.0))
+                    # elseif (t_new ≥ t_bound) && metro(δ == 0 ? λ₋ : 1.)
+                    elseif (t_new ≥ t_bound) && (δ ≠ 0 || metro(λ₋))
                         # interaction encountered
                         head <<= prevfloat(v_near.t)
                         li[head_id] = head
@@ -160,15 +161,14 @@
                         cycle_size += 1
                     end
                 else # if D == -1 # move backward <--
+                    if v_near.t == 1.0 # dummy element is at both 0 and β, here we regard it at 0.
+                        v_near <<= 0.0
+                    end
                     @nexprs $znbs k -> begin
-                        if mod(assoc_k.t, β) > mod(v_near.t, β)
+                        if v_near.t < assoc_k.t < 1.0
                             v_near = assoc_k
                         end
                     end
-                    if v_near.t == β # dummy element is at both 0 and β, here we regard it at 0.
-                        v_near <<= 0.0
-                    end
-
                     # however, the head cannot pass the tail
                     if v_near.t < tail.t < head.t
                         v_near = tail
@@ -182,7 +182,7 @@
                     end
                     # t_new = t - randexp() / λ₊
                     # t_bound = nextfloat(v_near.t, 4)
-                    t_new = nextfloat(t - randexp() / λ₊, -4)
+                    t_new = nextfloat(t - randexp() / (β * λ₊), -4)
                     t_bound = nextfloat(v_near.t, +4)
                     if (t_new > t_bound) && metro(δ == 0 ? (λ₋ / λ₊) : (1.0 / λ₊))
                         # no interaction
@@ -191,7 +191,8 @@
                         δ = i8(0)
                         loc = _at_free
                         cycle_size += 1
-                    elseif (t_new ≤ t_bound) && metro(δ == 0 ? (λ₋ / 1.0) : (1.0 / 1.0))
+                    # elseif (t_new ≤ t_bound) && metro(δ == 0 ? λ₋ : 1.)
+                    elseif (t_new ≤ t_bound) && (δ ≠ 0 || metro(λ₋))
                         head <<= nextfloat(v_near.t)
                         li[head_id] = head
                         δ = i8(+1)

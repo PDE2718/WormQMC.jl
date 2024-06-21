@@ -45,9 +45,9 @@ function Base.show(io::IO, m::GreenFuncBin)
     println(io, "└ Gl → $(summary(m.Gl))")
 end
 
-@inline function cal_Δτ(τ::f64, τ̂::f64, β::f64)::f64
-    return mod(τ̂ - τ, β)
-end
+# @inline function cal_Δτ(τ::f64, τ̂::f64, β::f64)::f64
+#     return mod(τ̂ - τ, β)
+# end
 @inline function xτmap(Δτ::f64, β::f64)::f64
     return (2Δτ/β) - 1.
 end
@@ -63,12 +63,16 @@ function accum_green!(G::GreenFuncBin,
     Gid = site_diff(H, b.i, b̂.i)
     #measure density matrix
     if loc == _at_green
+        @static if worm_debug == true
+            @assert b̂.t ∈ (nextfloat(b.t), prevfloat(b.t))
+        end
         G.G0[Gid] += complex(1, 0)
     elseif loc == _at_stop
         G.G0[Gid] += (b̂.t > b.t) ? complex(1, 0) : complex(0, 1)
     elseif loc == _at_free && (G.is_full || Gid[1] == Gid[2] == 1)
-        Δτ = cal_Δτ(b.t, b̂.t, G.β)
-        x = xτmap(Δτ, G.β)
+        # Δτ = cal_Δτ(b.t, b̂.t, G.β)
+        # x = xτmap(Δτ, G.β)
+        x = 2mod(b̂.t-b.t, 1.0) - 1.0
         collectPl!(G._Pl, x, norm=Val(:schmidt)) # norm with √(2l+1)
         G.Gl[Gid] .+= G._Pl
     end
@@ -99,7 +103,7 @@ function cal_Gτ(G::GreenFuncBin, τgrid, lmax::Int=-1)
     end
     return Gτs
 end
-
+typemax(Int32)
 # two ways of normalizing greens function, as a cross check
 function normalize_density_matrix(G::GreenFuncBin)
     @assert size(G.G0, 3) == size(G.G0, 4)

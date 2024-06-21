@@ -9,7 +9,7 @@ using Logging
 H = BH_Square(nmax=1, Lx=3, Ly=4,
     J=1.0, V=0.25, μ=1.0
 )
-β = 16.0
+β = 8.0
 
 L = Int.((H.Lx, H.Ly))
 ϕ = FBbasis(prod(L), 0, :hcboson, false)
@@ -88,10 +88,10 @@ function BH_Square_ED(H::BH_Square, β::f64)
     return res_dict
 end
 
-update_const = UpdateConsts(0.5, 2.0, 1.0)
+update_const = UpdateConsts(0.5, 1.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
-time_ther = Second(10)
-time_simu = Second(30)
+time_ther = Second(20)
+time_simu = Second(120)
 x = Wsheet(β, H)
 m = WormMeasure(x, update_const; green_lmax=1)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
