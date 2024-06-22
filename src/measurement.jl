@@ -13,7 +13,6 @@ import Base: push!, empty!, merge
 # end
 # get_slice(li::Wline)::StateType = li[end].n_L
 # get_slice(li::Wline, τ::f64)::StateType = element_around(li, τ, +1).n_L
-eps()
 function measure_site(l::Wline, U::f64, μ::f64)::NTuple{2,f64}
     @assert issorted(l)
     t::f64 = 0.
