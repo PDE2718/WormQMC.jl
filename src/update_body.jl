@@ -1,5 +1,5 @@
 @generated function worm_cycle!(x::Wsheet{Ndim}, H::Ham,
-    Q::UpdateConsts, Y::CycleAccumProb, G::T_G=nothing) where {Ndim,Ham<:BH_Parameters,T_G<:Union{Nothing,GreenFuncBin}}
+    Q::UpdateConsts, Y::CycleAccumProb, G::T_G=nothing)::Int where {Ndim,Ham<:BH_Parameters,T_G<:Union{Nothing,GreenFuncBin}}
 
     @assert Ndim == N_wldim(H)
     znbs::Int = N_nbs(H)
@@ -19,7 +19,7 @@
         ############################# [INSERT_WORM] #################################
         #############################################################################
         i::IndexType = j::IndexType = rand(eachindex(x))
-        t::f64 = clamp(rand(), nextfloat(0.,2), prevfloat(1.,2))
+        t::f64 = clamp(rand(), nextfloat(0.0, 2), prevfloat(1.0, 2))
         li::Wline = lj::Wline = x[i]
         head_id::Int = del_id::Int = vindex(li, t)
         n0::StateType = li[head_id].n_L
@@ -95,7 +95,7 @@
                 v_near::Element = li[mod1(head_id + D, length(li))]
                 nbs = get_nbs(H, i)
                 @nexprs $znbs k -> begin
-                    assoc_k::Element = element_around(x[nbs[k]], t, D, false)
+                    assoc_k::Element = element_around(x[nbs[k]], t, D)
                 end
                 nb_states::NTuple{$znbs,StateType} = if D == StateType(+1)
                     @ntuple $znbs k -> assoc_k.n_L
@@ -266,6 +266,7 @@
                 head_id = vindex(li, head.t)
                 Ki_id::Int = head_id - δ
                 Ki::Element = li[Ki_id]
+                @assert head.t == nextfloat(Ki.t, δ)
                 if head.op == Ki.op # case 1 : pass kink with prob 1
                     li[head_id] = Element(Ki.t,
                         Ki.i, Ki.j, head.n_L, head.n_R, Ki.op

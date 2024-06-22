@@ -62,7 +62,7 @@ isless(a::Element, t::f64)::Bool = isless(a.t, t)
 isless(t::f64, b::Element)::Bool = isless(t, b.t)
 vindex(l::Wline, t::f64)::Int = searchsortedfirst(l, t)
 @inline function close_to_any(l::Wline, t::f64)::Bool
-    c::Bool = vindex(l,nextfloat(t, -10)) ≠ vindex(l,nextfloat(t, +10))
+    c::Bool = vindex(l,nextfloat(t, -5)) ≠ vindex(l,nextfloat(t, +5))
     @static if worm_debug
         if c
             println("warn: close to existing element")
