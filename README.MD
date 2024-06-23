@@ -19,9 +19,9 @@ using WormQMC
 using LinearAlgebra, Statistics, Dates, DelimitedFiles, Logging
 # Logging.disable_logging(Logging.Info)
 
-# Example 4×4 hard-core Hubbard (roughly in SF regime)
-# U >> 1 for hard-core constraint. You can also use nmax=1
-H = BH_Square(nmax=10, Lx=8, Ly=8, U=40.0, J=1.0, V=0.25, μ=0.0)
+# Example 8×8 hard-core Hubbard (roughly in SF regime)
+# U ≫ 1 and nmax ≫ 1 can also be set. Here U is useless.
+H = BH_Square(nmax=1, Lx=8, Ly=8, U=40.0, J=1.0, V=0.25, μ=0.0)
 β = 8.0 # T = 1/β
 
 # Update constants. Can be fine tuned.
@@ -60,7 +60,7 @@ end
 using Plots,LaTeXStrings
 τgrid = LinRange(0.0, β, 100)
 G0τ = cal_Gτ(m.Gfunc, τgrid)[1]
-let G00 = G0τ |> first # normalization with density matrix
+let G00 = G0τ[1] # normalization with density matrix
     G0τ .*= (G0[1,1] ./ G00)
 end
 plot(τgrid,G0τ,
@@ -70,7 +70,7 @@ plot(τgrid,G0τ,
 )
 
 # check that for hard-core bosons, G(0⁺) + G(0⁻) == 1
-@assert ≈(G0τ[1] + G0τ[end], 1, atol=0.03)
+@assert ≈(G0τ[1] + G0τ[end-1], 1, atol=0.03)
 ```
 
 
