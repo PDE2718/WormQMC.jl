@@ -103,7 +103,7 @@ function cal_Gτ(G::GreenFuncBin, τgrid, lmax::Int=-1)
     end
     return Gτs
 end
-typemax(Int32)
+
 # two ways of normalizing greens function, as a cross check
 function normalize_density_matrix(G::GreenFuncBin)
     @assert size(G.G0, 3) == size(G.G0, 4)
