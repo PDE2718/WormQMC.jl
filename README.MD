@@ -1,6 +1,6 @@
 # WormQMC.jl
 
-A Julia implementation of the worm algorithm quantum Monte-Carlo (QMC). Largely inspired by [the original program by Nicolas Sadoune & Lode Pollet](https://github.com/LodePollet/worm). 
+A Julia implementation of the worm algorithm quantum Monte-Carlo (QMC). Largely inspired by [the original program by Nicolas Sadoune & Lode Pollet](https://github.com/LodePollet/worm).
 
 ## Overview
 > Warning⚠️: The code is still under development.
