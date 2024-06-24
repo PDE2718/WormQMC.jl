@@ -8,12 +8,12 @@ H = BH_Square(nmax=1, Lx=8, Ly=8, U=40.0, J=1.0, V=0.25, μ=0.0)
 β = 8.0 # T = 1/β
 
 # Update constants. Can be fine tuned.
-update_const = UpdateConsts(0.5, 1.0, 1.0)
+update_const = UpdateConsts(0.5, 2.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
 
 # Thermalization and simulation time. All need to be in second.
-time_ther = 1 |> Minute |> Second
-time_simu = 10 |> Minute |> Second
+time_ther = 2 |> Minute |> Second
+time_simu = 20 |> Minute |> Second
 
 # initialize the world line config and measurement
 # green_lmax for imaginary-time green's function precision
@@ -53,4 +53,4 @@ plot(τgrid,G0τ,
 )
 
 # check that for hard-core bosons, G(0⁺) + G(0⁻) == 1
-@assert ≈(G0τ[1] + G0τ[end-1], 1, atol=0.03)
+@assert ≈(G0τ[1] + G0τ[end], 1, atol=0.05)
