@@ -7,9 +7,9 @@ using Logging
 
 # Example 3×3 hard-core Hubbard
 H = BH_Pyroch(nmax=1, Lx=2, Ly=3,
-    J1=1.0, J2=1.0, V=0.25, μ=1.0
+    J1=1.0, J2=1.0, V=20.0, μ=5.0
 )
-β = 4.0
+β = 8.0
 
 function BH_ED(H::BH_Pyroch, β::f64)
     L = Int.((H.Lx, H.Ly, 2))
@@ -107,8 +107,8 @@ end
 
 update_const = UpdateConsts(0.5, 2.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
-time_ther = Second(20)
-time_simu = Second(120)
+time_ther = Second(60)
+time_simu = Second(180)
 x = Wsheet(β, H)
 m = WormMeasure(x, update_const)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)

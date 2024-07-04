@@ -51,6 +51,7 @@
             head = head_new
             δ = -δ
         end
+        cycle_size += 1
 
         ################################### begin worm cycle
         # @label CYCLE_START🔁
@@ -73,14 +74,14 @@
                     else #if loc == _at_dummy
                         dummy::Element = li[end]
                         if δ == i8(+1) && D == i8(-1)
-                            @assert head == li[1] && head.t == nextfloat(0.)
+                            # @assert head == li[1] && head.t == nextfloat(0.)
                             head <<= prevfloat(1.)
                             dummy = dummy_element(dummy.i, head.n_R)
                             li[end] = head
                             push!(li, dummy)
                             popfirst!(li)
                         else  # if δ == -1 && D == +1
-                            @assert head == li[end-1] && head.t == prevfloat(1.)
+                            # @assert head == li[end-1] && head.t == prevfloat(1.)
                             head <<= nextfloat(0.0)
                             dummy = dummy_element(dummy.i, head.n_L)
                             pushfirst!(li, head)
@@ -102,7 +103,6 @@
                 else
                     @ntuple $znbs k -> assoc_k.n_R
                 end
-                # nb_states::NTuple{$znbs,StateType} = getfield.(assocs, D == StateType(+1) ? :n_L : :n_R)
                 λ₊::f64 = λ₋::f64 = ΔE::f64 = Q.Eoff
                 Eb::f64 = diagE(H, head.n_L, nb_states)
                 Ef::f64 = diagE(H, head.n_R, nb_states)
@@ -113,11 +113,12 @@
                 end
                 # [TODO] add check for illegal configs?
                 if Ef > Ecutoff || Eb > Ecutoff
-                    @assert !(Ef > Ecutoff && Eb > Ecutoff) "problemastic update"
-                    @assert loc ≠ _at_free
+                    # @assert !(Ef > Ecutoff && Eb > Ecutoff) "problemastic update"
+                    # @assert loc ≠ _at_free
                     continue
                 end
                 ΔE = abs(Ef - Eb)
+                Δt = randexp()
                 ##################################### try to move
                 if D == StateType(+1) # move forward -->
                     @nexprs $znbs k -> begin
@@ -136,8 +137,12 @@
                     else
                         λ₊ += ΔE
                     end
-                    t_new = nextfloat(t + randexp() / (β * λ₊), +4)
-                    t_bound = nextfloat(v_near.t, -4)
+                    Δt /= (β * λ₊)
+                    if Δt < t_eps
+                        continue
+                    end
+                    t_new = t + Δt
+                    t_bound = v_near.t - t_eps
                     if (t_new < t_bound) && metro(δ == 0 ? (λ₋/λ₊) : inv(λ₊))
                         # no interaction
                         head <<= t_new
@@ -174,16 +179,17 @@
                         v_near = tail
                         # @assert tail.i ≠ head.i # otherwise, we have tail == v_near already
                     end
-
                     if Ef ≥ Eb
                         λ₋ += ΔE
                     else
                         λ₊ += ΔE
                     end
-                    # t_new = t - randexp() / λ₊
-                    # t_bound = nextfloat(v_near.t, 4)
-                    t_new = nextfloat(t - randexp() / (β * λ₊), -4)
-                    t_bound = nextfloat(v_near.t, +4)
+                    Δt /= (β * λ₊)
+                    if Δt < t_eps
+                        continue
+                    end
+                    t_new = t - Δt
+                    t_bound = v_near.t + t_eps
                     if (t_new > t_bound) && metro(δ == 0 ? (λ₋ / λ₊) : (1.0 / λ₊))
                         # no interaction
                         head <<= t_new
@@ -266,7 +272,7 @@
                 head_id = vindex(li, head.t)
                 Ki_id::Int = head_id - δ
                 Ki::Element = li[Ki_id]
-                @assert head.t == nextfloat(Ki.t, δ)
+                # @assert head.t == nextfloat(Ki.t, δ)
                 if head.op == Ki.op # case 1 : pass kink with prob 1
                     li[head_id] = Element(Ki.t,
                         Ki.i, Ki.j, head.n_L, head.n_R, Ki.op

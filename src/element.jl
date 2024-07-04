@@ -40,7 +40,6 @@ end
 import Base: <<
 <<(x::Element, t::f64) = Element(t, x.i, x.j, x.n_L, x.n_R, x.op)
 
-
 const ElePair::Type = Pair{Element,Element} # two related Elements
 const Wline::Type = Vector{Element}
 # Note that : For each wl the last element must be I_ at β (dummy element)
@@ -61,14 +60,10 @@ isless(a::Element, b::Element)::Bool = isless(a.t, b.t)
 isless(a::Element, t::f64)::Bool = isless(a.t, t)
 isless(t::f64, b::Element)::Bool = isless(t, b.t)
 vindex(l::Wline, t::f64)::Int = searchsortedfirst(l, t)
+
+const t_eps::f64 = 1e-15
 @inline function close_to_any(l::Wline, t::f64)::Bool
-    c::Bool = vindex(l,nextfloat(t, -5)) ≠ vindex(l,nextfloat(t, +5))
-    @static if worm_debug
-        if c
-            println("warn: close to existing element")
-        end
-    end
-    return c
+    return vindex(l, t + t_eps) ≠ vindex(l, t - t_eps)
 end
 
 # vertex id around t. if at = true, then exlude the vertex at t (it must exist).
