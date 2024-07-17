@@ -3,6 +3,7 @@
 
     @assert Ndim == N_wldim(H)
     znbs::Int = N_nbs(H)
+    zhops::Int = N_hops(H)
     mes_green = (T_G == GreenFuncBin)
     # println("compiling update for $(Ham) (Ndim = $(Ndim), znbs = $(znbs)), GF = $(mes_green)")
     quote
@@ -218,8 +219,9 @@
                 end
                 D = randsign()
                 i = head.i
-                nbs = get_nbs(H, i)
-                j = rand(nbs) |> IndexType
+                # nbs = get_nbs(H, i)
+                hops::NTuple{$zhops, Int} = get_hops(H, i)
+                j = rand(hops) |> IndexType
                 B = StateType(head.op)
                 li = x[i]
                 lj = x[j]
@@ -230,7 +232,7 @@
                     continue
                 end
                 Wk = max(nj, nmid)
-                P_acc = 2 * $znbs * Wk * bond_weight(H, i, j) * Q.P_del2ins
+                P_acc = 2 * $zhops * Wk * bond_weight(H, i, j) * Q.P_del2ins
                 if metro(P_acc)
                     # [TODO] check for order
                     nbs = get_nbs(H, j)
@@ -293,7 +295,7 @@
                     Kj_id::Int = vindex(lj, Ki.t)
                     Kj::Element = lj[Kj_id]
                     Wk = max(head.n_L, head.n_R)
-                    P_acc = inv(2 * $znbs * Wk * bond_weight(H, i, j) * Q.P_del2ins)
+                    P_acc = inv(2 * $zhops * Wk * bond_weight(H, i, j) * Q.P_del2ins)
                     if metro(P_acc)
                         head_new = Element(Kj.t, Kj.i, IndexType(0), Kj.n_L, Kj.n_R, head.op)
                         lj[Kj_id] = head_new

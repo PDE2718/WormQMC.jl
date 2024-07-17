@@ -204,3 +204,17 @@ end
 A = rand(1000)
 @btime randfill1($A)
 @btime randfill1($A, $myrng2)
+
+
+using LegendrePolynomials
+using BenchmarkTools
+aaa = rand(100)
+
+@btime collectPl!($aaa, $0.44, norm=Val(:schmidt))
+
+xs = [0.1,0.1,0.2,0.2,0.3,0.4]
+
+aaa = rand(100)
+@btime Pl_schmidt_lazy!($aaa, $1.0)
+
+0.44 * √3

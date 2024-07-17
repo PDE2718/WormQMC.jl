@@ -84,16 +84,21 @@ function measure_bond(li::Wline, lj::Wline, Vij::f64, bond_buffer::Wline)::f64
     end
     return V_val
 end
-function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch}, bond_buffer::Wline) where {N}
+function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch, BH_Trimer}, bond_buffer::Wline) where {N}
     Ū::f64 = μ̄::f64 = V̄::f64 = K̄::f64 = 0.
     Nkink::Int = Npar::Int = 0
     # ρ::f64 = U::f64 = μ::f64 = V::f64 = K::f64 = 0.
     for i ∈ eachindex(x.wl)
         li::Wline = x[i]
         Ū, μ̄ = (Ū, μ̄) .+ measure_site(li, H.U, H.μ)
-        for nb ∈ get_half_nbs(H, i)
-            V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
+        for nb ∈ get_nbs(H, i)
+            if nb < i
+                V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
+            end
         end
+        # for nb ∈ get_half_nbs(H, i)
+        #     V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
+        # end
         Nkink += (length(li)-1)
         Npar += li[end].n_R
     end
@@ -205,66 +210,6 @@ function Cab(S::StructureFactor2D, a::Int, b::Int)
     end
 end
 
-## Measurement for the winding_number
-function winding_number(x::Wsheet{2}, H::BH_Square)::NTuple{2, Int}
-    Wx::Int = Wy::Int = 0
-    for i ∈ eachindex(x)
-        for e::Element ∈ x[i]::Wline
-            if e.op == b_
-                dir = findfirst(==(e.j),get_nbs(H,i))
-                Wy = Wy - (dir==1) + (dir==2)
-                Wx = Wx - (dir==3) + (dir==4)
-            end
-        end
-    end
-    @assert Wx % H.Lx == Wy % H.Ly == 0
-    WxWy = (Wx÷H.Lx, Wy÷H.Ly)
-    return WxWy
-end
-function winding_number(x::Wsheet{3}, H::BH_Pyroch)::NTuple{2, Int}
-    Wx::Int = Wy::Int = 0
-    N::Int = H.Lx * H.Ly
-    for i ∈ eachindex(x)
-        for e::Element ∈ x[i]::Wline
-            if e.op == b_
-                dir = findfirst(==(e.j), get_nbs(H, i))
-                # @assert dir isa Int
-                sid =  i ≤ N ? 1 : 2
-                if dir == 1
-                    Wx += (-1)
-                    Wy += (-1)
-                elseif dir == 2
-                    Wx += (+1)
-                    Wy += (-1)
-                elseif dir == 3
-                    Wx += (-1)
-                    Wy += (+1)
-                elseif dir == 4
-                    Wx += (+1)
-                    Wy += (+1)
-                elseif dir == 5
-                    if sid == 1
-                        Wy -= 2
-                    else
-                        Wx -= 2
-                    end
-                elseif dir == 6
-                    if sid == 1
-                        Wy += 2
-                    else
-                        Wx += 2
-                    end
-                else
-                    error("dir illegal")
-                end
-            end
-        end
-    end
-    @assert Wx % (2H.Lx) == Wy % (2H.Ly) == 0
-    WxWy = (Wx ÷ (2H.Lx), Wy ÷ (2H.Ly))
-    return WxWy
-end
-
 @kwdef struct WindingMeasure
     Wx2::Accum{Int} = Accum(0)
     Wy2::Accum{Int} = Accum(0)
@@ -320,7 +265,7 @@ function Base.show(io::IO, m::T) where {T<:Union{SimpleMeasure, WindingMeasure}}
 end
 function Base.show(io::IO, m::StructureFactor2D{Nsub, NSk}) where {Nsub, NSk}
     println(io, "┌ StructureFactor2D:")
-    println(io, "│ ψs (Nsub = $(Nsub)): $(summary(m.Sk_))")
+    println(io, "│ ψs (Nsub = $(Nsub)): $(summary(m.ψs[1]))")
     println(io, "│ Sk (NSk  = $(NSk)): $(summary(m.Sk_))")
     println(io, "└ indices : $(m.abinds)")
 end
@@ -330,4 +275,36 @@ function Base.show(io::IO, m::WormMeasure)
     for (i, x) ∈ enumerate(fieldnames(T))
         show(io, getfield(m, x))
     end
+end
+
+function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk})::StructureFactor2D{Nsub,NSk} where {Nsub,NSk}
+    @assert s1.abinds == s2.abinds
+    @assert size(first(s1.ψs)) == size(first(s2.ψs))
+    abinds = deepcopy(s1.abinds)
+    ψs = ntuple(i -> similar(s1.ψs[i]), Nsub)
+    ψks = ntuple(i -> similar(s1.ψks[i]), Nsub)
+    Sk_ = similar(s1.Sk_)
+    Sk = ntuple(n -> s1.Sk[n] + s2.Sk[n], NSk)
+    num = s1.n_measure + s2.n_measure
+    return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, num)
+end
+function merge(g1::GreenFuncBin, g2::GreenFuncBin)::GreenFuncBin
+    @assert g1.is_full == g2.is_full
+    @assert g1.β == g2.β
+    @assert g1.Cw == g2.Cw
+    @assert length(g1._Pl) == length(g2._Pl)
+    @assert size(g1.Gl) == size(g2.Gl)
+    @assert size(g1.G0) == size(g2.G0)
+    _Pl = similar(g1._Pl)
+    Gl = similar(g1.Gl)
+    for i ∈ eachindex(Gl, g1.Gl, g2.Gl)
+        Gl[i] = g1.Gl[i] + g2.Gl[i]
+    end
+    G0 = g1.G0 + g2.G0
+    num = g1.insertion_trial + g2.insertion_trial
+    return GreenFuncBin(g1.is_full, g1.β, g1.Cw, _Pl, Gl, G0, num)
+end
+function merge(m1::WormMeasure, m2::WormMeasure)::WormMeasure
+    return WormMeasure(
+        ntuple(i -> merge(getfield(m1, i), getfield(m2, i)), fieldcount(WormMeasure))...,)
 end

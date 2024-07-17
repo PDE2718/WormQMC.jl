@@ -4,21 +4,22 @@ using LinearAlgebra, Statistics, Dates, DelimitedFiles, Logging
 
 # Example 8×8 hard-core Hubbard (roughly in SF regime)
 # U ≫ 1 and nmax ≫ 1 can also be set. Here U is useless.
-H = BH_Square(nmax=1, Lx=8, Ly=8, U=40.0, J=1.0, V=0.25, μ=0.0)
-β = 8.0 # T = 1/β
+H = BH_Square(nmax=20, Lx=8, Ly=8, U=40.0, J=1.0, V=0.25, μ=1.0)
+β = 16.0 # T = 1/β
 
 # Update constants. Can be fine tuned.
 update_const = UpdateConsts(0.5, 2.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
 
 # Thermalization and simulation time. All need to be in second.
-time_ther = 2 |> Minute |> Second
-time_simu = 20 |> Minute |> Second
+time_ther = 100 |> Second
+time_simu = 300 |> Second
 
 # initialize the world line config and measurement
 # green_lmax for imaginary-time green's function precision
 x = Wsheet(β, H)
-m = WormMeasure(x, update_const; green_lmax=100)
+m = WormMeasure(x, update_const; green_lmax=1)
+m.Gfunc.insertion_trial
 
 #! Do the simulation (should finish in time_ther+time_simu)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
@@ -27,6 +28,8 @@ onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
 G0 = normalize_density_matrix(m.Gfunc)[:, :, 1, 1]
 # calculate the real-space correlation Cij = ⟨ninj⟩
 Cij = Cab(m.Sfact, 1, 1)
+
+234400 * 1400 / 100
 
 # Now display the result
 begin

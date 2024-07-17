@@ -51,36 +51,44 @@ end
 @inline function xτmap(Δτ::f64, β::f64)::f64
     return (2Δτ/β) - 1.
 end
+function Pl_schmidt_lazy!(_Pl::Vector{Float64}, x::Float64)
+    @inbounds begin
+        if lastindex(_Pl) ≥ 2 && _Pl[1] == 1.0 && _Pl[2] == x * √3
+            return _Pl
+        else
+            collectPl!(_Pl, x, norm=Val(:schmidt))
+            return _Pl
+        end
+    end
+end
 
 function accum_green!(G::GreenFuncBin,
     b::Element, b̂::Element, loc::WormLocation, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters}
-    if b.op == b̂_
-        c = b
-        b = b̂
-        b̂ = c
-    end
-    @assert b.op == b_ && b̂.op == b̂_
-    Gid = site_diff(H, b.i, b̂.i)
-    #measure density matrix
-    if loc == _at_green
-        @static if worm_debug == true
-            @assert b̂.t ∈ (nextfloat(b.t), prevfloat(b.t))
+    @inbounds begin
+        if b.op == b̂_
+            c = b
+            b = b̂
+            b̂ = c
         end
-        G.G0[Gid] += complex(1, 0)
-    elseif loc == _at_stop
-        G.G0[Gid] += (b̂.t > b.t) ? complex(1, 0) : complex(0, 1)
-    elseif loc == _at_free && (G.is_full || Gid[1] == Gid[2] == 1)
-        # Δτ = cal_Δτ(b.t, b̂.t, G.β)
-        # x = xτmap(Δτ, G.β)
-        x = 2mod(b̂.t-b.t, 1.0) - 1.0
-        collectPl!(G._Pl, x, norm=Val(:schmidt)) # norm with √(2l+1)
-        G.Gl[Gid] .+= G._Pl
+        @assert b.op == b_ && b̂.op == b̂_
+        Gid = site_diff(H, b.i, b̂.i)
+        #measure density matrix
+        if loc == _at_green
+            G.G0[Gid] += complex(1, 0)
+        elseif loc == _at_stop
+            G.G0[Gid] += (b̂.t > b.t) ? complex(1, 0) : complex(0, 1)
+        elseif loc == _at_free && (G.is_full || Gid[1] == Gid[2] == 1)
+            x = 2mod(b̂.t-b.t, 1.0) - 1.0
+            Pl_schmidt_lazy!(G._Pl, x)
+            # collectPl!(G._Pl, x, norm=Val(:schmidt)) # norm with √(2l+1)
+            G.Gl[Gid] .+= G._Pl
+        end
+        return nothing
     end
-    return nothing
 end
-function accum_green!(G::GreenFuncBin, w::Worm, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters} 
-    accum_green!(G, w.tail, w.head, w.loc, H)
-end
+# function accum_green!(G::GreenFuncBin, w::Worm, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters} 
+#     accum_green!(G, w.tail, w.head, w.loc, H)
+# end
 
 
 ## below functions are not performance critical.

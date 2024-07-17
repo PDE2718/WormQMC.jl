@@ -4,8 +4,8 @@ using LinearAlgebra, Statistics, Dates, DelimitedFiles, Logging, Accessors
 
 # Example 8×8 hard-core Hubbard (roughly in SF regime)
 # U ≫ 1 and nmax ≫ 1 can also be set. Here U is useless.
-H = BH_Pyroch(nmax=1, Lx=32, Ly=32, U=0.0, J1=1.0, J2=0.1, V=20.0, μ=2.0)
-β = 16.0 # T = 1/β
+H = BH_Pyroch(nmax=1, Lx=32, Ly=32, U=0.0, J1=1.0, J2=0.125, V=10.0, μ=2.0)
+β = 4.0 # T = 1/β
 
 # Update constants. Can be fine tuned.
 update_const = UpdateConsts(0.5, 4.0, 1.0)
@@ -19,7 +19,6 @@ time_simu = 5 |> Minute |> Second
 # green_lmax for imaginary-time green's function precision
 x = Wsheet(β, H)
 m = WormMeasure(x, update_const; green_lmax=1)
-
 
 #! Do the simulation (should finish in time_ther+time_simu)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
@@ -41,6 +40,8 @@ begin
 end
 
 mean(m.simple.N) / (H.Lx * H.Ly)
+m.winding
+
 
 # Plot the imaginary green's function
 using Plots,LaTeXStrings
@@ -57,3 +58,8 @@ plot(τgrid,G0τ,
 
 # check that for hard-core bosons, G(0⁺) + G(0⁻) == 1
 @assert ≈(G0τ[1] + G0τ[end], 1, atol=0.05)
+
+
+using BenchmarkTools
+@btime get_nbs($H, 1)
+
