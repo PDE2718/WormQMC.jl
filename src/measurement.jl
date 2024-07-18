@@ -1,143 +1,58 @@
 import Base: push!, empty!, merge
-# function get_slice!(ψ::Matrix{T}, x::Wsheet, τ::f64 = 0.) where {T<:Real}
-#     if iszero(τ)
-#         for i ∈ eachindex(ψ, x.wl)
-#             ψ[i] = x[i][end].n_L
+# function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch, BH_Trimer}, bond_buffer::Wline) where {N}
+#     Ū::f64 = μ̄::f64 = V̄::f64 = K̄::f64 = 0.
+#     Nkink::Int = Npar::Int = 0
+#     for i ∈ eachindex(x.wl)
+#         li::Wline = x[i]
+#         Ū, μ̄ = (Ū, μ̄) .+ measure_site(li, H.U, H.μ)
+#         for nb ∈ get_nbs(H, i)
+#             if nb < i
+#                 V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
+#             end
 #         end
-#     else
-#         for i ∈ eachindex(ψ, x.wl)
-#             ψ[i] = element_around(x[i], τ, +1).n_L
-#         end
+#         Nkink += (length(li)-1)
+#         Npar += li[end].n_R
+#     end
+#     @assert Nkink |> iseven
+#     K̄ = - (Nkink÷2) / x.β
+#     Ē = Ū + μ̄ + V̄ + K̄
+#     return (f64(Npar), f64(abs2(Npar)), Ē, K̄, Ū, μ̄, V̄)
+# end
+# @kwdef mutable struct SimpleMeasure
+#     N::Accum{f64} = Accum(0.)
+#     N2::Accum{f64} = Accum(0.)
+#     E::Accum{f64} = Accum(0.)
+#     K::Accum{f64} = Accum(0.)
+#     U::Accum{f64} = Accum(0.)
+#     μ::Accum{f64} = Accum(0.)
+#     V::Accum{f64} = Accum(0.)
+# end
+
+
+# function push!(M::SimpleMeasure, one_measure::NTuple{7, f64})
+#     @inbounds for (i, m) ∈ enumerate(one_measure)
+#         push!(getfield(M, i)::Accum{f64}, m)
 #     end
 #     return nothing
 # end
-# get_slice(li::Wline)::StateType = li[end].n_L
-# get_slice(li::Wline, τ::f64)::StateType = element_around(li, τ, +1).n_L
-function measure_site(l::Wline, U::f64, μ::f64)::NTuple{2,f64}
-    @assert issorted(l)
-    t::f64 = 0.
-    n::StateType = l[end].n_R
-    # β::f64 = l[end].t
-    Δt::f64 = 0.
-    U_val::f64 = 0.
-    μ_val::f64 = 0.
-    for e ∈ l
-        Δt = e.t - t
-        U_val += Δt * 0.5 * n * (n-1) * U
-        μ_val -= Δt * n * μ
-        t = e.t
-        n = e.n_R
-    end
-    return (U_val, μ_val)
-end
-function merge_sorted!(C, A, B)::Nothing
-    empty!(C)
-    # @assert issorted(A) && issorted(B)
-    iA::Int = 1
-    lA::Int = lastindex(A)
-    iB::Int = 1
-    lB::Int = lastindex(B)
-    @inbounds while true
-        if iA ≤ lA && iB ≤ lB
-            if A[iA] < B[iB]
-                push!(C, A[iA])
-                iA += 1
-            else
-                push!(C, B[iB])
-                iB += 1
-            end
-        elseif iA ≤ lA
-            push!(C, A[iA])
-            iA += 1
-        elseif iB ≤ lB
-            push!(C, B[iB])
-            iB += 1
-        else
-            return nothing
-        end
-    end
-end
-function measure_bond(li::Wline, lj::Wline, Vij::f64, bond_buffer::Wline)::f64
-    t::f64 = 0.
-    ni::StateType = li[end].n_R
-    nj::StateType = lj[end].n_R
-    i::IndexType = li[end].i
-    j::IndexType = lj[end].i
-    Δt::f64 = 0.0
-    V_val::f64 = 0.
-    merge_sorted!(bond_buffer, li, lj)
-    for e ∈ bond_buffer
-        if e.t > t
-            Δt = e.t - t
-            V_val += Δt * Vij * ni * nj
-            t = e.t
-        end
-        if t == 1.0
-            break
-        elseif e.i == i
-            ni = e.n_R
-        elseif e.i == j
-            nj = e.n_R
-        else
-            error("how can e.i ≠ i or j")
-        end
-    end
-    return V_val
-end
-function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch, BH_Trimer}, bond_buffer::Wline) where {N}
-    Ū::f64 = μ̄::f64 = V̄::f64 = K̄::f64 = 0.
-    Nkink::Int = Npar::Int = 0
-    # ρ::f64 = U::f64 = μ::f64 = V::f64 = K::f64 = 0.
-    for i ∈ eachindex(x.wl)
-        li::Wline = x[i]
-        Ū, μ̄ = (Ū, μ̄) .+ measure_site(li, H.U, H.μ)
-        for nb ∈ get_nbs(H, i)
-            if nb < i
-                V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
-            end
-        end
-        # for nb ∈ get_half_nbs(H, i)
-        #     V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
-        # end
-        Nkink += (length(li)-1)
-        Npar += li[end].n_R
-    end
-    @assert Nkink |> iseven
-    K̄ = - (Nkink÷2) / x.β
-    Ē = Ū + μ̄ + V̄ + K̄
-    return (f64(Npar), f64(abs2(Npar)), Ē, K̄, Ū, μ̄, V̄)
-end
-@kwdef struct SimpleMeasure
-    N::Accum{f64} = Accum(0.)
-    N2::Accum{f64} = Accum(0.)
-    E::Accum{f64} = Accum(0.)
-    K::Accum{f64} = Accum(0.)
-    U::Accum{f64} = Accum(0.)
-    μ::Accum{f64} = Accum(0.)
-    V::Accum{f64} = Accum(0.)
-end
-function push!(M::SimpleMeasure, one_measure::NTuple{7, f64})
-    @inbounds for (i, m) ∈ enumerate(one_measure)
-        push!(getfield(M, i)::Accum{f64}, m)
-    end
-    return nothing
-end
-function empty!(M::SimpleMeasure)
-    for i ∈ 1:fieldcount(SimpleMeasure)
-        empty!(getfield(M, i)::Accum{f64})
-    end
-    return nothing
-end
-function merge(M1::SimpleMeasure, M2::SimpleMeasure)
-    return SimpleMeasure(
-        Tuple(merge(getfield(M1,i), getfield(M2,i)) for i ∈ 1:fieldcount(SimpleMeasure))...)
-end
+# function empty!(M::SimpleMeasure)
+#     for i ∈ 1:fieldcount(SimpleMeasure)
+#         empty!(getfield(M, i)::Accum{f64})
+#     end
+#     return nothing
+# end
+# function merge(M1::SimpleMeasure, M2::SimpleMeasure)
+#     return SimpleMeasure(
+#         Tuple(merge(getfield(M1,i), getfield(M2,i)) for i ∈ 1:fieldcount(SimpleMeasure))...)
+# end
 
 ### Measurement for the structure factor / Density Correlation
-function rfft_buffer(L::NTuple{N,Int}) where {N}
-    L = Tuple(i == 1 ? (1 + l >> 1) : l for (i, l) ∈ enumerate(L))
-    return zeros(ComplexF64, L)
+
+function SimpleMeasure(H::Ham) where {Ham<:BH_Parameters}
+    names = simple_measure_names(H)
+    return SimpleMeasure((x -> 0.0).(names), names, 0)
 end
+
 @kwdef mutable struct StructureFactor2D{Nsub,NSk}
     const ψs::NTuple{Nsub, Matrix{Float64}}
     const ψks::NTuple{Nsub, Matrix{ComplexF64}}
@@ -154,7 +69,12 @@ function empty!(S::StructureFactor2D)
     return nothing
 end
 
+function rfft_buffer(L::NTuple{N,Int}) where {N}
+    L = Tuple(i == 1 ? (1 + l >> 1) : l for (i, l) ∈ enumerate(L))
+    return zeros(ComplexF64, L)
+end
 rfftplan(S::StructureFactor2D) = plan_rfft(S.ψs |> first)
+
 function StructureFactor2D(Lx::Integer, Ly::Integer, Nsub::Integer)
     @assert Nsub > 0
     sz = Int.((Lx,Ly))
@@ -191,13 +111,11 @@ function get_slice!(S::StructureFactor2D, x::Wsheet{3})
     end
     return nothing
 end
-
 function measure_Sk2D!(S::StructureFactor2D, x::Wsheet, P::FFTW.rFFTWPlan)
     get_slice!(S, x)
     cal_Sk!(S, P)
     return nothing
 end
-
 function Cab(S::StructureFactor2D, a::Int, b::Int)
     P = rfftplan(S)
     N = length(S.ψs[1])
@@ -210,59 +128,49 @@ function Cab(S::StructureFactor2D, a::Int, b::Int)
     end
 end
 
-@kwdef struct WindingMeasure
-    Wx2::Accum{Int} = Accum(0)
-    Wy2::Accum{Int} = Accum(0)
-    Wxy::Accum{Int} = Accum(0)
-end
-function push!(M::WindingMeasure, WxWy::NTuple{2,Int})
-    Wx, Wy = WxWy
-    push!(M.Wx2, abs2(Wx))
-    push!(M.Wy2, abs2(Wy))
-    push!(M.Wxy, abs(Wx*Wy))
-    return nothing
-end
-function empty!(M::WindingMeasure)
-    for i ∈ 1:fieldcount(WindingMeasure)
-        empty!(getfield(M, i)::Accum{f64})
-    end
-    return nothing
-end
-function merge(M1::WindingMeasure, M2::WindingMeasure)
-    return WindingMeasure(Tuple(merge(getfield(M1, i), getfield(M2, i)) for i ∈ 1:fieldcount(WindingMeasure))...)
-end
+# @kwdef struct WindingMeasure
+#     Wx2::Accum{Int} = Accum(0)
+#     Wy2::Accum{Int} = Accum(0)
+#     Wxy::Accum{Int} = Accum(0)
+# end
+# function push!(M::WindingMeasure, WxWy::NTuple{2,Int})
+#     Wx, Wy = WxWy
+#     push!(M.Wx2, abs2(Wx))
+#     push!(M.Wy2, abs2(Wy))
+#     push!(M.Wxy, abs(Wx*Wy))
+#     return nothing
+# end
+# function empty!(M::WindingMeasure)
+#     for i ∈ 1:fieldcount(WindingMeasure)
+#         empty!(getfield(M, i)::Accum{f64})
+#     end
+#     return nothing
+# end
+# function merge(M1::WindingMeasure, M2::WindingMeasure)
+#     return WindingMeasure(Tuple(merge(getfield(M1, i), getfield(M2, i)) for i ∈ 1:fieldcount(WindingMeasure))...)
+# end
 
 struct WormMeasure
     simple::SimpleMeasure
-    winding::WindingMeasure
     Gfunc::GreenFuncBin
     Sfact::StructureFactor2D
 end
-function WormMeasure(x::Wsheet, update_const::UpdateConsts;
+function WormMeasure(x::Wsheet, H::BH_Parameters, update_const::UpdateConsts;
     green_lmax::Int=100, is_full::Bool= false)::WormMeasure
-
     return WormMeasure(
-        SimpleMeasure(),
-        WindingMeasure(),
+        SimpleMeasure(H),
         GreenFuncBin(x, green_lmax, update_const.Cw; is_full = is_full),
         StructureFactor2D(x),
     )
 end
-function measure!(m::WormMeasure, x::Wsheet, H::BH_Parameters, bond_buffer, Sk_plan)
+function measure!(m::WormMeasure, x::Wsheet{Nwl}, H::Ham,
+    bond_buffer::Wline, Sk_plan::FFTW.rFFTWPlan) where {Nwl,Ham<:BH_Parameters}
     tic::Int = time_ns()
-    push!(m.simple, simple_measure(x, H, bond_buffer))
-    push!(m.winding, winding_number(x, H))
+    simple_measure!(m.simple, x, H, bond_buffer)
     measure_Sk2D!(m.Sfact, x, Sk_plan)
     return UInt64(time_ns()-tic)
 end
 
-function Base.show(io::IO, m::T) where {T<:Union{SimpleMeasure, WindingMeasure}}
-    println(io, "┌ $(T):")
-    nterm = fieldcount(T)
-    for (i,x) ∈ enumerate(fieldnames(T))
-        println(io, i < nterm ? "│ " : "└ ", x, " = ", mean(getfield(m, x)))
-    end
-end
 function Base.show(io::IO, m::StructureFactor2D{Nsub, NSk}) where {Nsub, NSk}
     println(io, "┌ StructureFactor2D:")
     println(io, "│ ψs (Nsub = $(Nsub)): $(summary(m.ψs[1]))")
@@ -277,34 +185,34 @@ function Base.show(io::IO, m::WormMeasure)
     end
 end
 
-function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk})::StructureFactor2D{Nsub,NSk} where {Nsub,NSk}
-    @assert s1.abinds == s2.abinds
-    @assert size(first(s1.ψs)) == size(first(s2.ψs))
-    abinds = deepcopy(s1.abinds)
-    ψs = ntuple(i -> similar(s1.ψs[i]), Nsub)
-    ψks = ntuple(i -> similar(s1.ψks[i]), Nsub)
-    Sk_ = similar(s1.Sk_)
-    Sk = ntuple(n -> s1.Sk[n] + s2.Sk[n], NSk)
-    num = s1.n_measure + s2.n_measure
-    return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, num)
-end
-function merge(g1::GreenFuncBin, g2::GreenFuncBin)::GreenFuncBin
-    @assert g1.is_full == g2.is_full
-    @assert g1.β == g2.β
-    @assert g1.Cw == g2.Cw
-    @assert length(g1._Pl) == length(g2._Pl)
-    @assert size(g1.Gl) == size(g2.Gl)
-    @assert size(g1.G0) == size(g2.G0)
-    _Pl = similar(g1._Pl)
-    Gl = similar(g1.Gl)
-    for i ∈ eachindex(Gl, g1.Gl, g2.Gl)
-        Gl[i] = g1.Gl[i] + g2.Gl[i]
-    end
-    G0 = g1.G0 + g2.G0
-    num = g1.insertion_trial + g2.insertion_trial
-    return GreenFuncBin(g1.is_full, g1.β, g1.Cw, _Pl, Gl, G0, num)
-end
-function merge(m1::WormMeasure, m2::WormMeasure)::WormMeasure
-    return WormMeasure(
-        ntuple(i -> merge(getfield(m1, i), getfield(m2, i)), fieldcount(WormMeasure))...,)
-end
+# function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk})::StructureFactor2D{Nsub,NSk} where {Nsub,NSk}
+#     @assert s1.abinds == s2.abinds
+#     @assert size(first(s1.ψs)) == size(first(s2.ψs))
+#     abinds = deepcopy(s1.abinds)
+#     ψs = ntuple(i -> similar(s1.ψs[i]), Nsub)
+#     ψks = ntuple(i -> similar(s1.ψks[i]), Nsub)
+#     Sk_ = similar(s1.Sk_)
+#     Sk = ntuple(n -> s1.Sk[n] + s2.Sk[n], NSk)
+#     num = s1.n_measure + s2.n_measure
+#     return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, num)
+# end
+# function merge(g1::GreenFuncBin, g2::GreenFuncBin)::GreenFuncBin
+#     @assert g1.is_full == g2.is_full
+#     @assert g1.β == g2.β
+#     @assert g1.Cw == g2.Cw
+#     @assert length(g1._Pl) == length(g2._Pl)
+#     @assert size(g1.Gl) == size(g2.Gl)
+#     @assert size(g1.G0) == size(g2.G0)
+#     _Pl = similar(g1._Pl)
+#     Gl = similar(g1.Gl)
+#     for i ∈ eachindex(Gl, g1.Gl, g2.Gl)
+#         Gl[i] = g1.Gl[i] + g2.Gl[i]
+#     end
+#     G0 = g1.G0 + g2.G0
+#     num = g1.insertion_trial + g2.insertion_trial
+#     return GreenFuncBin(g1.is_full, g1.β, g1.Cw, _Pl, Gl, G0, num)
+# end
+# function merge(m1::WormMeasure, m2::WormMeasure)::WormMeasure
+#     return WormMeasure(
+#         ntuple(i -> merge(getfield(m1, i), getfield(m2, i)), fieldcount(WormMeasure))...,)
+# end

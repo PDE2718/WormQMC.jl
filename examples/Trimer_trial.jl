@@ -4,11 +4,11 @@ using LinearAlgebra, Statistics, Dates, DelimitedFiles, Logging, Accessors
 
 # Example 8×8 hard-core Hubbard (roughly in SF regime)
 # U ≫ 1 and nmax ≫ 1 can also be set. Here U is useless.
-H = BH_Trimer(nmax=1, Lx=18, Ly=18, U=0.0, J1=1.0, J2=1.0, V=10.0, μ=4.0)
-β = 5.0 # T = 1/β
+H = BH_Trimer(nmax=1, Lx=18, Ly=18, U=0.0, J1=1.0, J2=1.0, V=10.0, μ=0.0)
+β = 48.0 # T = 1/β
 
 # Update constants. Can be fine tuned.
-update_const = UpdateConsts(0.5, 4.0, 1.0)
+update_const = UpdateConsts(0.5, 1.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
 
 # Thermalization and simulation time. All need to be in second.
@@ -18,11 +18,8 @@ time_simu = 120 |> Second
 # initialize the world line config and measurement
 # green_lmax for imaginary-time green's function precision
 x = Wsheet(β, H)
-m = WormMeasure(x, update_const; green_lmax=1)
+m = WormMeasure(x, H, update_const; green_lmax=1)
 ψsnaps = Array{i8,3}[]
-
-mean(m.simple.N) / (H.Lx * H.Ly)
-m.winding
 
 #! Do the simulation (should finish in time_ther+time_simu)
 onesimu!(x, H, m, ψsnaps, update_const, cycle_prob, time_ther, time_simu)
@@ -87,15 +84,24 @@ end
 gif_ani = gif(ani, fps=12)
 gif_ani |> display
 
-# function trimfill(ψ, s)
+heatmap(0:17, 0:17, Cij',
+    yflip=true,
+    ylabel="x", xlabel="y", xlims=(0, 18), ylims=(0, 18),
+    labels=false,
+    framestyle=:box, aspect_ratio=:equal, size=(500, 500), grid=false
+)
+Cij = Cab(m.Sfact, 1, 1)
+heatmap(Cij)
 
-# end
+G0 = normalize_density_matrix(m.Gfunc)[:, :, 2, 2]
+heatmap(0:17, 0:17, G0',
+    yflip=true,
+    ylabel="x", xlabel="y", xlims=(0, 18), ylims=(0, 18),
+    labels=false,
+    framestyle=:box, aspect_ratio=:equal, size=(500, 500), grid=false
+)
+plot(G0[1:end,1])
 
-# heatmap(ψ[:, :, 1].+ψ[:,:,1])
-# heatmap(ψ[:, :, 2])
-
-
-# Cij = Cab(m.Sfact, 1, 1)
 # using Plots
 # heatmap(G0)
 

@@ -46,9 +46,55 @@ function site_diff(H::BH_Square, i, j)::CartesianIndex{4}
     return CartesianIndex(dx, dy, 1, 1)
 end
 
-## Measurement for the winding_number
-function winding_number(x::Wsheet{2}, H::BH_Square)::NTuple{2,Int}
+## Measurement for the winding_number and kinetic energies
+# function winding_number(x::Wsheet{2}, H::BH_Square)
+#     Wx::Int = Wy::Int = 0
+#     NKx::Int = NKy::Int = 0
+#     for i ∈ eachindex(x)
+#         for e::Element ∈ x[i]::Wline
+#             if e.op == b_
+#                 hops = get_hops(H, i)
+#                 j = Int(e.j)
+#                 if j == hops[1]
+#                     Wy -= 1
+#                     NKy += 1
+#                 elseif j == hops[2]
+#                     Wy += 1
+#                     NKy += 1
+#                 elseif j == hops[3]
+#                     Wx -= 1
+#                     NKx += 1
+#                 elseif j == hops[4]
+#                     Wx += 1
+#                     NKx += 1
+#                 else
+#                     error("illegal operator")
+#                 end
+#             end
+#         end
+#     end
+#     @assert Wx % H.Lx == Wy % H.Ly == 0
+#     Wx = Wx ÷ H.Lx
+#     Wy = Wy ÷ H.Ly
+#     return Wx, Wy, NKx, NKy
+# end
+
+function simple_measure!(m::SimpleMeasure, x::Wsheet{2}, H::BH_Square,
+    bond_buffer::Wline)::Nothing
+    U = μ = V = N = 0.0
+    for (i, c) ∈ enumerate(CartesianIndices(x.wl))
+        li::Wline = x[i]
+        U, μ = (U, μ) .+ measure_site(li, H.U, H.μ)
+        for nb ∈ get_nbs(H, i)
+            if nb < i
+                V += measure_bond(li, x[nb], H.V, bond_buffer)
+            end
+        end
+        N += li[end].n_L
+    end
+    # Wx, Wy, NKx, NKy = winding_number(x, H)
     Wx::Int = Wy::Int = 0
+    NKx::Int = NKy::Int = 0
     for i ∈ eachindex(x)
         for e::Element ∈ x[i]::Wline
             if e.op == b_
@@ -56,25 +102,37 @@ function winding_number(x::Wsheet{2}, H::BH_Square)::NTuple{2,Int}
                 j = Int(e.j)
                 if j == hops[1]
                     Wy -= 1
+                    NKy += 1
                 elseif j == hops[2]
                     Wy += 1
+                    NKy += 1
                 elseif j == hops[3]
                     Wx -= 1
+                    NKx += 1
                 elseif j == hops[4]
                     Wx += 1
+                    NKx += 1
                 else
                     error("illegal operator")
                 end
-                # Wy = Wy - (dir == 1) + (dir == 2)
-                # Wx = Wx - (dir == 3) + (dir == 4)
             end
         end
     end
     @assert Wx % H.Lx == Wy % H.Ly == 0
-    WxWy = (Wx ÷ H.Lx, Wy ÷ H.Ly)
-    return WxWy
+    Wx = Wx ÷ H.Lx
+    Wy = Wy ÷ H.Ly
+
+    N2 = abs2(N)
+    Kx = -NKx / x.β
+    Ky = -NKy / x.β
+    K = Kx + Ky
+    E = U + μ + V + K
+    Wx2 = f64(abs2(Wx))
+    Wy2 = f64(abs2(Wy))
+    m.props = m.props .+ (E, N, N2, K, U, μ, V, Kx, Ky, Wx2, Wy2)
+    m.n_measure += 1
+    return nothing
 end
-# function get_half_nbs(H::BH_Pyroch, i::Integer)::NTuple{3,Int}
-#     nbs = get_nbs(H, i)
-#     return (nbs[1], nbs[2], nbs[5])
-# end
+function simple_measure_names(::BH_Square)
+    return (:E, :N, :N2, :K, :U, :μ, :V, :Kx, :Ky, :Wx2, :Wy2)
+end

@@ -90,10 +90,10 @@ end
 
 update_const = UpdateConsts(0.5, 1.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
-time_ther = Second(20)
-time_simu = Second(120)
+time_ther = Second(10)
+time_simu = Second(10)
 x = Wsheet(β, H)
-m = WormMeasure(x, update_const; green_lmax=1)
+m = WormMeasure(x, H, update_const; green_lmax=1)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
 
 using BenchmarkTools
@@ -109,7 +109,6 @@ res_ED = BH_Square_ED(H, β)
 begin
 @info "QMC result"
 m.simple |> display
-m.winding |> display
 println("┌ DensMat")
 writedlm(stdout, G0)
 println("┌ DensCor")

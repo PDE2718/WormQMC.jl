@@ -55,9 +55,10 @@ function onesimu!(x::Wsheet{N}, H::Ham, m::WormMeasure,
     [N_cycles         ] = $(N_cycle)
     [average_size     ] = $(total_cycle_size/N_cycle)
     [wl length / β    ] = $((mean(length, x.wl)-1) / x.β)
-    [total measure    ] = $(m.simple.E.num)
+    [total measure    ] = $(m.simple.n_measure)
     [total   time (ns)] = $(T_simu)
     [measure time (ns)] = $(T_measure)
+    [measurement]: $(m.simple)
     """
     return nothing
 end
@@ -129,9 +130,10 @@ function onesimu!(x::Wsheet{N}, H::Ham, m::WormMeasure, ψsnaps::Vector{Array{i8
     [N_cycles         ] = $(N_cycle)
     [average_size     ] = $(total_cycle_size/N_cycle)
     [wl length / β    ] = $((mean(length, x.wl)-1) / x.β)
-    [total measure    ] = $(m.simple.E.num)
+    [total measure    ] = $(m.simple.n_measure)
     [total   time (ns)] = $(T_simu)
     [measure time (ns)] = $(T_measure)
+    [measurement]: $(m.simple)
     """
     return nothing
 end

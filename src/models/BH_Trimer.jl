@@ -142,3 +142,79 @@ function winding_number(x::Wsheet{3}, H::BH_Trimer)::NTuple{2,Int}
     WxWy = (Wx ÷ H.Lx, Wy ÷ H.Ly)
     return WxWy
 end
+
+function simple_measure!(m::SimpleMeasure, x::Wsheet{3}, H::BH_Trimer,
+    bond_buffer::Wline)::Nothing
+    U = μ = V = 0.0
+    N₁ = N₂ = 0
+    for (i, c) ∈ enumerate(CartesianIndices(x.wl))
+        li::Wline = x[i]
+        U, μ = (U, μ) .+ measure_site(li, H.U, H.μ)
+        for nb ∈ get_nbs(H, i)
+            if nb < i
+                V += measure_bond(li, x[nb], H.V, bond_buffer)
+            end
+        end
+        ni = li[end].n_L
+        if ni > 0
+            if c[3] == 1
+                N₁ += ni
+            else #if c[3] == 2
+                N₂ += ni
+            end
+        end
+    end
+    # Wx, Wy, NKx, NKy = winding_number(x, H)
+    Wx = Wy = NKx = NKy = NKz = 0
+    N0::Int = H.Lx * H.Ly
+    for i ∈ eachindex(x)
+        for e::Element ∈ x[i]::Wline
+            if e.op == b_
+                @assert e.i == i
+                hops = get_hops(H, i)
+                j = Int(e.j)
+                if j == hops[1]
+                    NKz += 1
+                elseif j == hops[2]
+                    if i ≤ N0
+                        Wx -= 1
+                        NKx += 1
+                    else
+                        Wy -= 1
+                        NKy += 1
+                    end
+                elseif j == hops[3]
+                    if i ≤ N0
+                        Wx += 1
+                        NKx += 1
+                    else
+                        Wy += 1
+                        NKy += 1
+                    end
+                else
+                    error("illegal operator")
+                end
+            end
+        end
+    end
+    @assert Wx % H.Lx == Wy % H.Ly == 0
+    Wx ÷= H.Lx
+    Wy ÷= H.Ly    
+    Kx = -NKx / x.β
+    Ky = -NKy / x.β
+    Kz = -NKz / x.β
+    K = Kx + Ky + Kz
+    N = N₁ + N₂
+    N² = abs2(N)
+    Δ² = abs2(N₁-N₂)
+    E = U + μ + V + K
+    Wx² = abs2(Wx)
+    Wy² = abs2(Wy)
+    m.props = m.props .+ (E, N, N², N₁, N₂, Δ², K, U, μ, V, Kx, Ky, Kz, Wx², Wy²)
+    m.n_measure += 1
+    return nothing
+end
+
+function simple_measure_names(::BH_Trimer)
+    return (:E, :N, :N², :N₁, :N₂, :Δ², :K, :U, :μ, :V, :Kx, :Ky, :Kz, :Wx², :Wy²)
+end

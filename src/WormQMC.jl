@@ -1,5 +1,5 @@
 module WormQMC
-using LinearAlgebra, Random, Distributions, Statistics, FFTW, Dates, Accessors, LegendrePolynomials
+using LinearAlgebra, Random, Distributions, Statistics, FFTW, Dates, Accessors, LegendrePolynomials, StaticArrays
 using Base.Cartesian.Base:@ntuple, @nexprs, @nextract
 const worm_debug::Bool = false
 
