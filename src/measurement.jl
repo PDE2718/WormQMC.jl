@@ -28,7 +28,6 @@ import Base: push!, empty!, merge
 #     V::Accum{f64} = Accum(0.)
 # end
 
-
 # function push!(M::SimpleMeasure, one_measure::NTuple{7, f64})
 #     @inbounds for (i, m) ∈ enumerate(one_measure)
 #         push!(getfield(M, i)::Accum{f64}, m)
@@ -185,34 +184,50 @@ function Base.show(io::IO, m::WormMeasure)
     end
 end
 
-# function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk})::StructureFactor2D{Nsub,NSk} where {Nsub,NSk}
-#     @assert s1.abinds == s2.abinds
-#     @assert size(first(s1.ψs)) == size(first(s2.ψs))
-#     abinds = deepcopy(s1.abinds)
-#     ψs = ntuple(i -> similar(s1.ψs[i]), Nsub)
-#     ψks = ntuple(i -> similar(s1.ψks[i]), Nsub)
-#     Sk_ = similar(s1.Sk_)
-#     Sk = ntuple(n -> s1.Sk[n] + s2.Sk[n], NSk)
-#     num = s1.n_measure + s2.n_measure
-#     return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, num)
-# end
-# function merge(g1::GreenFuncBin, g2::GreenFuncBin)::GreenFuncBin
-#     @assert g1.is_full == g2.is_full
-#     @assert g1.β == g2.β
-#     @assert g1.Cw == g2.Cw
-#     @assert length(g1._Pl) == length(g2._Pl)
-#     @assert size(g1.Gl) == size(g2.Gl)
-#     @assert size(g1.G0) == size(g2.G0)
-#     _Pl = similar(g1._Pl)
-#     Gl = similar(g1.Gl)
-#     for i ∈ eachindex(Gl, g1.Gl, g2.Gl)
-#         Gl[i] = g1.Gl[i] + g2.Gl[i]
-#     end
-#     G0 = g1.G0 + g2.G0
-#     num = g1.insertion_trial + g2.insertion_trial
-#     return GreenFuncBin(g1.is_full, g1.β, g1.Cw, _Pl, Gl, G0, num)
-# end
-# function merge(m1::WormMeasure, m2::WormMeasure)::WormMeasure
-#     return WormMeasure(
-#         ntuple(i -> merge(getfield(m1, i), getfield(m2, i)), fieldcount(WormMeasure))...,)
-# end
+function merge(s1::SimpleMeasure{Np}, s2::SimpleMeasure{Np}
+    )::SimpleMeasure{Np} where {Np}
+    @assert s1.names == s2.names
+    return SimpleMeasure(
+        s1.props .+ s2.props,
+        s1.names,
+        s1.n_measure + s2.n_measure
+    )
+end
+
+function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk}
+    )::StructureFactor2D{Nsub,NSk} where {Nsub,NSk}
+
+    @assert s1.abinds == s2.abinds
+    @assert size(first(s1.ψs)) == size(first(s2.ψs))
+    abinds = deepcopy(s1.abinds)
+    ψs = ntuple(i -> similar(s1.ψs[i]), Nsub)
+    ψks = ntuple(i -> similar(s1.ψks[i]), Nsub)
+    Sk_ = similar(s1.Sk_)
+    Sk = ntuple(n -> s1.Sk[n] + s2.Sk[n], NSk)
+    num = s1.n_measure + s2.n_measure
+    return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, num)
+end
+function merge(g1::GreenFuncBin, g2::GreenFuncBin)::GreenFuncBin
+    @assert g1.is_full == g2.is_full
+    @assert g1.β == g2.β
+    @assert g1.Cw == g2.Cw
+    @assert length(g1._Pl) == length(g2._Pl)
+    @assert size(g1.Gl) == size(g2.Gl)
+    @assert size(g1.G0) == size(g2.G0)
+    _Pl = similar(g1._Pl)
+    Gl = similar(g1.Gl)
+    for i ∈ eachindex(Gl, g1.Gl, g2.Gl)
+        Gl[i] = g1.Gl[i] + g2.Gl[i]
+    end
+    G0 = g1.G0 + g2.G0
+    num = g1.insertion_trial + g2.insertion_trial
+    return GreenFuncBin(g1.is_full, g1.β, g1.Cw, _Pl, Gl, G0, num)
+end
+
+function merge(m1::WormMeasure, m2::WormMeasure)::WormMeasure
+    return WormMeasure(
+        merge(m1.simple, m2.simple),
+        merge(m1.Gfunc, m2.Gfunc),
+        merge(m1.Sfact, m2.Sfact)
+    )
+end

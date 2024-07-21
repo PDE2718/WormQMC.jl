@@ -1,9 +1,8 @@
 module WormQMC
-using LinearAlgebra, Random, Distributions, Statistics, FFTW, Dates, Accessors, LegendrePolynomials, StaticArrays
+using LinearAlgebra, Random, Statistics, FFTW, LegendrePolynomials, Dates
 using Base.Cartesian.Base:@ntuple, @nexprs, @nextract
 const worm_debug::Bool = false
 
-include("accumulator.jl")
 include("element.jl")
 include("hamiltionian.jl")
 include("green_func.jl")

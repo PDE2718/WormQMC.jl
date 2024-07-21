@@ -3,11 +3,13 @@ mutable struct SimpleMeasure{Np}
     const names::NTuple{Np,Symbol}
     n_measure::Int
 end
+import Base:empty!
 function empty!(m::SimpleMeasure)
     m.props = 0.0 .* m.props
     m.n_measure = 0
     return m
 end
+import Base:show
 function Base.show(io::IO, m::SimpleMeasure)
     println(io, "SimpleMeasure: ", NamedTuple(zip(m.names, m.props ./ m.n_measure)))
 end
