@@ -58,11 +58,15 @@ end
     const abinds::NTuple{NSk, Pair{Int, Int}}
     const Sk::NTuple{NSk, Matrix{ComplexF64}}
     const Sk_::Matrix{ComplexF64}
+    const ρs::NTuple{Nsub,Matrix{Float64}}
     n_measure::Int
 end
 function empty!(S::StructureFactor2D)
     for Ski ∈ S.Sk
         fill!(Ski, complex(0.0))
+    end
+    for ρ ∈ S.ρs
+        fill!(ρ, 0.0)
     end
     S.n_measure = 0
     return nothing
@@ -83,7 +87,8 @@ function StructureFactor2D(Lx::Integer, Ly::Integer, Nsub::Integer)
     abinds = Tuple(unique(Pair(minmax(a, b)...) for a ∈ 1:Nsub, b ∈ 1:Nsub))
     Sk = Tuple(rfft_buffer(sz) for i ∈ 1:NSk)
     Sk_ = rfft_buffer(sz)
-    return StructureFactor2D{Nsub, NSk}(ψs, ψks, abinds, Sk, Sk_, 0)
+    ρs = deepcopy(ψs)
+    return StructureFactor2D{Nsub, NSk}(ψs, ψks, abinds, Sk, Sk_, ρs, 0)
 end
 StructureFactor2D(x::Wsheet{2}) = StructureFactor2D(size(x.wl)...,1)
 StructureFactor2D(x::Wsheet{3}) = StructureFactor2D(size(x.wl)...)
@@ -113,6 +118,9 @@ end
 function measure_Sk2D!(S::StructureFactor2D, x::Wsheet, P::FFTW.rFFTWPlan)
     get_slice!(S, x)
     cal_Sk!(S, P)
+    for (ρ, ψ) ∈ zip(S.ρs, S.ψs)
+        ρ .+= ψ
+    end
     return nothing
 end
 function Cab(S::StructureFactor2D, a::Int, b::Int)
@@ -125,6 +133,9 @@ function Cab(S::StructureFactor2D, a::Int, b::Int)
     else
         return inv(N * S.n_measure)*(P \ conj.(S.Sk[ab]))
     end
+end
+function density_histogram(S::StructureFactor2D{Nsub,NSk}) where {Nsub,NSk}
+    return ntuple(i-> (inv(S.n_measure) .* S.ρs[i]), Nsub)
 end
 
 # @kwdef struct WindingMeasure
@@ -196,7 +207,6 @@ end
 
 function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk}
     )::StructureFactor2D{Nsub,NSk} where {Nsub,NSk}
-
     @assert s1.abinds == s2.abinds
     @assert size(first(s1.ψs)) == size(first(s2.ψs))
     abinds = deepcopy(s1.abinds)
@@ -204,9 +214,11 @@ function merge(s1::StructureFactor2D{Nsub,NSk}, s2::StructureFactor2D{Nsub,NSk}
     ψks = ntuple(i -> similar(s1.ψks[i]), Nsub)
     Sk_ = similar(s1.Sk_)
     Sk = ntuple(n -> s1.Sk[n] + s2.Sk[n], NSk)
+    ρs = ntuple(n -> s1.ρs[n] + s2.ρs[n], NSk)
     num = s1.n_measure + s2.n_measure
-    return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, num)
+    return StructureFactor2D(ψs, ψks, abinds, Sk, Sk_, ρs, num)
 end
+
 function merge(g1::GreenFuncBin, g2::GreenFuncBin)::GreenFuncBin
     @assert g1.is_full == g2.is_full
     @assert g1.β == g2.β

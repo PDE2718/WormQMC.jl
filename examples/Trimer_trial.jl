@@ -4,8 +4,8 @@ using LinearAlgebra, Statistics, Dates, DelimitedFiles, Logging, Accessors
 
 # Example 8×8 hard-core Hubbard (roughly in SF regime)
 # U ≫ 1 and nmax ≫ 1 can also be set. Here U is useless.
-H = BH_Trimer(nmax=1, Lx=18, Ly=18, U=0.0, J1=1.0, J2=1.0, V=10.0, μ=-0.6)
-β = 18.0 # T = 1/β
+H = BH_Trimer(nmax=1, Lx=30, Ly=30, U=0.0, J1=1.0, J2=1.0, V=10.0, μ=-0.8)
+β = 20.0 # T = 1/β
 
 # Update constants. Can be fine tuned.
 update_const = UpdateConsts(0.5, 1.0, 1.0)
@@ -13,7 +13,7 @@ cycle_prob = CycleProb(1, 1, 1, 1)
 
 # Thermalization and simulation time. All need to be in second.
 time_ther = 60 |> Second
-time_simu = 120 |> Second
+time_simu = 300 |> Second
 
 # initialize the world line config and measurement
 # green_lmax for imaginary-time green's function precision
@@ -21,10 +21,12 @@ x = Wsheet(β, H)
 m = WormMeasure(x, H, update_const; green_lmax=1)
 ψsnaps = Array{i8,3}[]
 
-
 #! Do the simulation (should finish in time_ther+time_simu)
 onesimu!(x, H, m, ψsnaps, update_const, cycle_prob, time_ther, time_simu)
 
+ρmap = density_histogram(m.Sfact)
+using Plots
+heatmap(ρmap[2])
 # calculate the density matrix with Gfunc buffer
 G0 = normalize_density_matrix(m.Gfunc)[:, :, 1, 1]
 # calculate the real-space correlation Cij = ⟨ninj⟩
@@ -70,9 +72,11 @@ function plotsegs(anidata, t)
     vline!(plt, [1:L[1]], lw=1, lc=:grey, la=0.2, labels=false)
     hline!(plt, [1:L[2]], lw=1, lc=:grey, la=0.2, labels=false)
     plot!(plt, xb, yb, lw=2wb, lc=cb,
-        yflip=true,
-        ylabel="x", xlabel="y", xlims=(0, L[end] + 1), ylims=(0, L[end] + 1), labels=false,
-        framestyle=:box, aspect_ratio=:equal, size=(500, 500), grid=false
+        # yflip=true,
+        xlabel="x", ylabel="y", xlims=(0, L[1] + 1), ylims=(0, L[2] + 1), labels=false,
+        framestyle=:box, aspect_ratio=:equal,
+        # size=(500, 500),
+        grid=false
     )
     # scatter!(holes, mc=4, marker=(2, stroke(0)), labels=false)
     annotate!((0, 1.05), text("t=$(t)", :top))
@@ -102,7 +106,7 @@ heatmap(0:17, 0:17, G0',
     framestyle=:box, aspect_ratio=:equal, size=(500, 500), grid=false
 )
 plot(G0[1:end,1])
-
+length(-1.14:0.04:-0.9)
 # using Plots
 # heatmap(G0)
 
