@@ -31,33 +31,72 @@ function measure_site(l::Wline, U::f64, μ::f64)::NTuple{2,f64}
     end
     return (U_val, μ_val)
 end
-function merge_sorted!(C, A, B)::Nothing
-    empty!(C)
-    # @assert issorted(A) && issorted(B)
-    iA::Int = 1
-    lA::Int = lastindex(A)
-    iB::Int = 1
-    lB::Int = lastindex(B)
-    @inbounds while true
-        if iA ≤ lA && iB ≤ lB
-            if A[iA] < B[iB]
-                push!(C, A[iA])
-                iA += 1
-            else
-                push!(C, B[iB])
-                iB += 1
+# function merge_sorted!(C, A, B)::Nothing
+#     empty!(C)
+#     # @assert issorted(A) && issorted(B)
+#     iA::Int = 1
+#     lA::Int = lastindex(A)
+#     iB::Int = 1
+#     lB::Int = lastindex(B)
+#     @inbounds while true
+#         if iA ≤ lA && iB ≤ lB
+#             if A[iA] < B[iB]
+#                 push!(C, A[iA])
+#                 iA += 1
+#             else
+#                 push!(C, B[iB])
+#                 iB += 1
+#             end
+#         elseif iA ≤ lA
+#             push!(C, A[iA])
+#             iA += 1
+#         elseif iB ≤ lB
+#             push!(C, B[iB])
+#             iB += 1
+#         else
+#             return nothing
+#         end
+#     end
+# end
+
+using Base: @ntuple, @nexprs
+@generated function merge_sorted!(dst::Vector{T}, vs::Vararg{Vector{T},N})::Nothing where {T,N}
+    if N == 1
+        quote
+            v = first(vs)
+            resize!(dst, length(v))
+            copy!(dst, v)
+            return nothing
+        end
+    else
+        quote
+            L0 = 0
+            @nexprs $(N) i -> begin
+                v_i = vs[i]
+                L_i = length(v_i)
+                t_i = 1
+                L0 += L_i
             end
-        elseif iA ≤ lA
-            push!(C, A[iA])
-            iA += 1
-        elseif iB ≤ lB
-            push!(C, B[iB])
-            iB += 1
-        else
+            resize!(dst, L0)
+            @inbounds for t_dst ∈ 1:L0
+                min_idx = 0
+                local min_val::T
+                @nexprs $(N) i -> begin
+                    if t_i ≤ L_i && (min_idx == 0 || v_i[t_i] < min_val)
+                        min_val = v_i[t_i]
+                        min_idx = i
+                    end
+                end
+                dst[t_dst] = min_val
+                @nexprs $(N) i -> if i == min_idx
+                    t_i += 1
+                end
+            end
             return nothing
         end
     end
 end
+
 function measure_bond(li::Wline, lj::Wline, Vij::f64, bond_buffer::Wline)::f64
     t::f64 = 0.
     ni::StateType = li[end].n_R

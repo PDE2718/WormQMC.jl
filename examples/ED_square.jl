@@ -9,7 +9,7 @@ using Logging
 H = BH_Square(nmax=1, Lx=3, Ly=4,
     J=1.0, V=0.25, μ=1.0
 )
-β = 8.0
+β = 40.0
 
 L = Int.((H.Lx, H.Ly))
 ϕ = FBbasis(prod(L), 0, :hcboson, false)
@@ -88,16 +88,16 @@ function BH_Square_ED(H::BH_Square, β::f64)
     return res_dict
 end
 
-update_const = UpdateConsts(0.5, 1.0, 1.0)
+update_const = UpdateConsts(0.5, 2.0, 1.0)
 cycle_prob = CycleProb(1, 1, 1, 1)
-time_ther = Second(10)
-time_simu = Second(10)
+time_ther = Second(60)
+time_simu = Second(360)
 x = Wsheet(β, H)
 m = WormMeasure(x, H, update_const; green_lmax=1)
 onesimu!(x, H, m, update_const, cycle_prob, time_ther, time_simu)
 
 using BenchmarkTools
-@btime worm_cycle!($x, $H, $update_const, $cycle_prob)
+# @btime worm_cycle!($x, $H, $update_const, $cycle_prob)
 G0 = normalize_density_matrix(m.Gfunc)[:,:,1,1]
 Cij = Cab(m.Sfact,1,1)
 # using Plots
