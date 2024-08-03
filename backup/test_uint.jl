@@ -218,3 +218,5 @@ aaa = rand(100)
 @btime Pl_schmidt_lazy!($aaa, $1.0)
 
 0.44 * √3
+
+x1, y1, z1 = Tuple(CartesianIndex(1,2,3))

@@ -1,19 +1,18 @@
 using WormQMC
 using LinearAlgebra, Statistics, Dates, DelimitedFiles, Logging, Accessors
-# Logging.disable_logging(Logging.Info)
 
-# Example 8×8 hard-core Hubbard (roughly in SF regime)
-# U ≫ 1 and nmax ≫ 1 can also be set. Here U is useless.
-H = BH_Trimer(nmax=1, Lx=30, Ly=30, U=0.0, J1=1.0, J2=1.0, V=12.0, μ=-1.0)
+H = BH_Stick(nmax=1,
+    Lx=30, Ly=30,
+    Jp=1.0, Jq=1.0, R=1.0,
+    U=0.0, V=12.0, μ=2.5,
+)
 β = 20.0 # T = 1/β
-
 # Update constants. Can be fine tuned.
 update_const = UpdateConsts(0.5, 2.0, 1.0)
-cycle_prob = CycleProb(1, 1, 1, 1)
-
+cycle_prob = CycleProb(1, 2, 2, 1)
 # Thermalization and simulation time. All need to be in second.
-time_ther = 60 |> Second
-time_simu = 300 |> Second
+time_ther = 120 |> Second
+time_simu = 120 |> Second
 
 # initialize the world line config and measurement
 # green_lmax for imaginary-time green's function precision
@@ -26,12 +25,16 @@ onesimu!(x, H, m, ψsnaps, update_const, cycle_prob, time_ther, time_simu)
 
 ρmap = density_histogram(m.Sfact)
 using Plots
+heatmap(ρmap[1])
 heatmap(ρmap[2])
+
 # calculate the density matrix with Gfunc buffer
 G0 = normalize_density_matrix(m.Gfunc)[:, :, 1, 1]
 # calculate the real-space correlation Cij = ⟨ninj⟩
 
 ψ = [l[end].n_L for l ∈ x.wl]
+
+216.64/900
 
 function parse_bonds(ψ)
     ψA = ψ[:,:,1]
@@ -88,6 +91,8 @@ ani = @animate for i ∈ eachindex(anidata)[1:5:end]
 end
 gif_ani = gif(ani, fps=12)
 gif_ani |> display
+
+231.7218468468468 / 900
 
 heatmap(0:17, 0:17, Cij',
     yflip=true,

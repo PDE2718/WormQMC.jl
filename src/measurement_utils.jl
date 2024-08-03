@@ -124,5 +124,3 @@ function measure_bond(li::Wline, lj::Wline, Vij::f64, bond_buffer::Wline)::f64
     end
     return V_val
 end
-
-
