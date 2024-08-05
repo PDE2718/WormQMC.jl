@@ -5,3 +5,7 @@
 **/.vscode*
 .vscode
 .vscode/*
+.draft
+.draft/*
+.backup
+.backup/*

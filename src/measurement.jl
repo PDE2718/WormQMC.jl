@@ -51,6 +51,11 @@ function SimpleMeasure(H::Ham) where {Ham<:BH_Parameters}
     names = simple_measure_names(H)
     return SimpleMeasure((x -> 0.0).(names), names, 0)
 end
+import Base:getindex
+function getindex(m::SimpleMeasure{Np}, o::Symbol) where {Np}
+    i = findfirst(==(o), m.names)
+    return isnothing(i) ? NaN : m.props[i] / m.n_measure
+end
 
 @kwdef mutable struct StructureFactor2D{Nsub,NSk}
     const ψs::NTuple{Nsub, Matrix{Float64}}
