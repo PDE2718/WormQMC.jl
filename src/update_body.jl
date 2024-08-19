@@ -105,8 +105,8 @@
                     @ntuple $znbs k -> assoc_k.n_R
                 end
                 λ₊::f64 = λ₋::f64 = ΔE::f64 = Q.Eoff
-                Eb::f64 = diagE(H, head.n_L, nb_states)
-                Ef::f64 = diagE(H, head.n_R, nb_states)
+                Eb::f64 = diagE(H, i, head.n_L, nb_states)
+                Ef::f64 = diagE(H, i, head.n_R, nb_states)
                 if D == StateType(-1)
                     ΔE = Ef
                     Ef = Eb

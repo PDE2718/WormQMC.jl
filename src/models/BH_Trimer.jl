@@ -3,8 +3,8 @@ abstract type BH_Parameters end
     nmax::StateType = 1 # nmax must be implemented
     Lx::IndexType = 0 # the size should also be implemented
     Ly::IndexType = 0
-    J1::f64 = 1.0 # other parameters
-    J2::f64 = 1.0 # other parameters
+    J1::f64 = 1.0 # hopping strength
+    J2::f64 = 1.0 # rotating strength
     U::f64 = 0.0 # on site repulsion, can be zero if nmax==1
     V::f64 = 1.0 # off site repulsion, set to a large value for shaped hard core
     μ::f64 = 0.0 # chemical potential
@@ -144,18 +144,25 @@ function simple_measure!(m::SimpleMeasure, x::Wsheet{3}, H::BH_Trimer,
     Kz = -NKz / x.β
     K = Kx + Ky + Kz
     N = N₁ + N₂
-    N² = abs2(N)
     Δ² = abs2(N₁-N₂)
     E = U + μ + V + K
     Wx² = abs2(Wx)
     Wy² = abs2(Wy)
-    m.props = m.props .+ (E, N, N², N₁, N₂, Δ², K, U, μ, V, Kx, Ky, Kz, Wx², Wy²)
+    m.props = m.props .+ (E,
+        N, abs2(N), N₁, abs2(N₁), N₂, abs2(N₂),
+        Δ², K, U, μ, V,
+        Kx, Ky, Kz, Wx², Wy²
+    )
     m.n_measure += 1
     return nothing
 end
 
 function simple_measure_names(::BH_Trimer)
-    return (:E, :N, :N², :N₁, :N₂, :Δ², :K, :U, :μ, :V, :Kx, :Ky, :Kz, :Wx², :Wy²)
+    return (:E,
+        :N, :N², :N₁, :N₁², :N₂, :N₂²,
+        :Δ², :K, :U, :μ, :V,
+        :Kx, :Ky, :Kz, :Wx², :Wy²
+    )
 end
 
 ## Measurement for the winding_number

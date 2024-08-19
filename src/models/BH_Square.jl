@@ -32,7 +32,7 @@ function get_nbs(H::BH_Square, i::Integer)::NTuple{4,Int}
 end
 get_hops(H::BH_Square, i::Integer)::NTuple{4,Int} = get_nbs(H, i)
 
-function diagE(H::BH_Square, ni::StateType, njs::NTuple{4,StateType})::f64
+function diagE(H::BH_Square, i, ni::StateType, njs::NTuple{4,StateType})::f64
     return 0.5 * H.U * ni * (ni - 1) - H.μ * ni + H.V * ni * sum(njs)
 end
 bond_weight(H::BH_Square, i::Integer, j::Integer)::f64 = H.J

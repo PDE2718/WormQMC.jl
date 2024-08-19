@@ -44,7 +44,7 @@ function get_nbs(H::BH_Pyroch, i::Integer)::NTuple{6,Int}
 end
 get_hops(H::BH_Pyroch, i::Integer)::NTuple{6,Int} = get_nbs(H, i)
 
-function diagE(H::BH_Pyroch, ni::StateType, njs::NTuple{6,StateType})::f64
+function diagE(H::BH_Pyroch, i, ni::StateType, njs::NTuple{6,StateType})::f64
     return 0.5 * H.U * ni * (ni - 1) - H.μ * ni + H.V * ni * sum(njs)
 end
 function bond_weight(H::BH_Pyroch, i::Integer, j::Integer)::f64
