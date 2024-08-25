@@ -15,8 +15,8 @@ mutable struct GreenFuncBin
     const β::f64
     const Cw::f64
     const _Pl::Vector{f64} # Pₗ buffer for speed
-    const Gl::AbstractArray{Vector{f64}}
-    const G0::AbstractArray{Complex{Int}}
+    const Gl::Array{Vector{f64}, 4}
+    const G0::Array{Complex{Int}, 4}
     insertion_trial::Int
 end
 import Base:empty!
@@ -86,10 +86,6 @@ function accum_green!(G::GreenFuncBin,
         return nothing
     end
 end
-# function accum_green!(G::GreenFuncBin, w::Worm, H::T_Ham)::Nothing where {T_Ham<:BH_Parameters} 
-#     accum_green!(G, w.tail, w.head, w.loc, H)
-# end
-
 
 ## below functions are not performance critical.
 

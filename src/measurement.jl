@@ -1,52 +1,6 @@
 import Base: push!, empty!, merge
-# function simple_measure(x::Wsheet{N}, H::Union{BH_Square, BH_Pyroch, BH_Trimer}, bond_buffer::Wline) where {N}
-#     Ū::f64 = μ̄::f64 = V̄::f64 = K̄::f64 = 0.
-#     Nkink::Int = Npar::Int = 0
-#     for i ∈ eachindex(x.wl)
-#         li::Wline = x[i]
-#         Ū, μ̄ = (Ū, μ̄) .+ measure_site(li, H.U, H.μ)
-#         for nb ∈ get_nbs(H, i)
-#             if nb < i
-#                 V̄ += measure_bond(li, x[nb], H.V, bond_buffer)
-#             end
-#         end
-#         Nkink += (length(li)-1)
-#         Npar += li[end].n_R
-#     end
-#     @assert Nkink |> iseven
-#     K̄ = - (Nkink÷2) / x.β
-#     Ē = Ū + μ̄ + V̄ + K̄
-#     return (f64(Npar), f64(abs2(Npar)), Ē, K̄, Ū, μ̄, V̄)
-# end
-# @kwdef mutable struct SimpleMeasure
-#     N::Accum{f64} = Accum(0.)
-#     N2::Accum{f64} = Accum(0.)
-#     E::Accum{f64} = Accum(0.)
-#     K::Accum{f64} = Accum(0.)
-#     U::Accum{f64} = Accum(0.)
-#     μ::Accum{f64} = Accum(0.)
-#     V::Accum{f64} = Accum(0.)
-# end
-
-# function push!(M::SimpleMeasure, one_measure::NTuple{7, f64})
-#     @inbounds for (i, m) ∈ enumerate(one_measure)
-#         push!(getfield(M, i)::Accum{f64}, m)
-#     end
-#     return nothing
-# end
-# function empty!(M::SimpleMeasure)
-#     for i ∈ 1:fieldcount(SimpleMeasure)
-#         empty!(getfield(M, i)::Accum{f64})
-#     end
-#     return nothing
-# end
-# function merge(M1::SimpleMeasure, M2::SimpleMeasure)
-#     return SimpleMeasure(
-#         Tuple(merge(getfield(M1,i), getfield(M2,i)) for i ∈ 1:fieldcount(SimpleMeasure))...)
-# end
 
 ### Measurement for the structure factor / Density Correlation
-
 function SimpleMeasure(H::Ham) where {Ham<:BH_Parameters}
     names = simple_measure_names(H)
     return SimpleMeasure((x -> 0.0).(names), names, 0)
