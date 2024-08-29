@@ -27,14 +27,14 @@
             loc::WormLocation = _at_stop
             i::IndexType = rand(lattice)
             li::Wline = x[i]
-            t::f64 = clamp(rand(), nextfloat(0.0, 2), prevfloat(1.0, 2))
+            t::f64 = rand()
             head_id::Int = vindex(li, t)
             n0::StateType = li[head_id].n_L
             np::StateType = n0 - D
             P_acc::f64 = 2 * Q.Cw * max(np, n0)
 
             # case insertion failed!
-            if np < StateType(0) || np > H.nmax || !(metro(P_acc)) || close_to_any(li, t)
+            if np < StateType(0) || np > H.nmax || t < t_eps || t > (1-t_eps) || !(metro(P_acc)) || close_to_any(li, t)
                 continue
             end
             hops::NTuple{$zhops,Int} = get_hops(H, i)::NTuple{$zhops,Int}
@@ -60,8 +60,12 @@
             cycle_size += 1
 
             # begin worm cycle
+            # single_cycle_trials = 0
 
             @label CYCLE_START🔁
+
+            # single_cycle_trials += 1
+            # if single_cycle_trials > lattice[end]
 
             $(
                 if mes_green
@@ -75,10 +79,6 @@
 
             if dice < Y.AP_move_worm         # [MOVE_WORM]
                 D = randsign()
-                # i = head.i
-                # li = x[head.i]
-                # head_id = vindex(li, head.t)
-                # @assert li[head_id] == head
                 if D * δ == i8(-1)
                     if loc == _at_stop || loc == _at_kink
                         @goto CYCLE_START🔁
@@ -88,7 +88,7 @@
                         head <<= nextfloat(head.t, 2D)
                         li[head_id] = head
                         δ = -δ
-                    elseif loc == _at_dummy
+                    elseif loc == _at_dummy # pass dummy
                         dummy = li[end]
                         if δ == i8(+1) && D == i8(-1)
                             # @assert head == li[1] && head.t == nextfloat(0.)
@@ -105,16 +105,12 @@
                             pushfirst!(li, head)
                             pop!(li)
                             li[end] = dummy
-                            head_id = firstindex(li)
+                            head_id = 1
                         end
                         δ = -δ
-                        # else
-                        #     error("loc cannot be free when D*δ==-1")
                     end
                 end
                 t = head.t
-                # @assert li[head_id] == head
-                # head_id = vindex(li, head.t)
                 v_near = li[mod1(head_id + D, length(li))]
                 nbs::NTuple{$znbs,Int} = get_nbs(H, i)::NTuple{$znbs, Int}
                 @nexprs $znbs k -> begin
@@ -239,10 +235,6 @@
                     @goto CYCLE_START🔁
                 end
                 D = randsign()
-                # @assert li[head_id] == head
-                # i = head.i
-                # li = x[i]
-                # hops = get_hops(H, i)::NTuple{$zhops,Int}
                 j = rand(hops) |> IndexType
                 if j == IndexType(0)
                     @goto CYCLE_START🔁
@@ -265,17 +257,12 @@
                         end
                     end
                     hops = hops_j
-                    # iq = vindex(li, head.t)
-                    iq = head_id
-                    # @assert li[iq] == head
-                    # first set head as part of K
-                    # li[iq] = Element(head.t, head.i, j, head.n_L, head.n_R, head.op)
                     Kj = Element(head.t, j, i,
                         D == i8(+1) ? nj : nmid,
                         D == i8(+1) ? nmid : nj,
                         OpType(-B)
                     )
-                    li[iq] = Element(head.t, head.i, j, head.n_L, head.n_R, head.op)
+                    li[head_id] = Element(head.t, head.i, j, head.n_L, head.n_R, head.op)
                     head = Element(nextfloat(head.t, D), j, IndexType(0), Kj.n_R, Kj.n_L, head.op)
                     # update worm
                     if D == i8(+1)
@@ -299,10 +286,6 @@
                 if loc ≠ _at_kink
                     @goto CYCLE_START🔁
                 end
-                # i = head.i
-                # li = x[i]
-                # head_id = vindex(li, head.t)
-                # @assert li[head_id] == head
                 Ki_id = head_id - δ
                 Ki = li[Ki_id]
                 # @assert head.t == nextfloat(Ki.t, δ)
@@ -313,7 +296,6 @@
                     li[Ki_id] = head = Element(nextfloat(Ki.t, -δ),
                         head.i, head.j, Ki.n_L, Ki.n_R, head.op
                     )
-
                     i = head.i
                     li = li
                     head_id = Ki_id
@@ -348,11 +330,9 @@
             else #if dice < Y.AP_glue_worm≡1 # [GLUE_WORM]
                 if loc == _at_stop && metro(inv(2 * Q.Cw * max(head.n_L, head.n_R)))
                     # @assert head.i == tail.i && head.t == nextfloat(tail.t, δ)
-                    # li = x[head.i]
-                    # head_id = vindex(li, head.t)
-                    # @assert li[head_id] == head
                     del_id = min(head_id, head_id - δ)
                     deleteat!(li, range(del_id, length=2))
+                    # @assert check_wl(li)
                     cycle_size += 1
                     continue
                 else

@@ -65,6 +65,14 @@ const t_eps::f64 = 1e-15
 @inline function close_to_any(l::Wline, t::f64)::Bool
     return vindex(l, t + t_eps) ≠ vindex(l, t - t_eps)
 end
+function check_wl(l::Wline)::Bool
+    for i ∈ (1:lastindex(l)-1)
+        if !(l[i].op ≠ I_ && l[i].n_R == l[i+1].n_L && l[i].t < l[i+1].t)
+            return false
+        end
+    end
+    return l[end].op == I_ && (l[end].n_L == l[end].n_R == l[1].n_L)
+end
 
 # vertex id around t. if at = true, then exlude the vertex at t (it must exist).
 @inline function vindex_around(l::Wline, t::f64, at::Bool=false)::NTuple{2,Int}
@@ -116,10 +124,10 @@ size(X::Wsheet) = size(X.wl)
     _at_dummy # head is before β or after 0. near the dummy element
     _at_green # head is of the same time as tail, but not at the same site.
 end
-struct Worm
-    tail::Element
-    head::Element
-    δ::StateType # head is before(left,δ=-1) or after(right,δ=+1) another element
-    loc::WormLocation # see above WormLocation
-end
-Worm()::Worm = Worm(Element(),Element(),StateType(0),_at_null)
+# struct Worm
+#     tail::Element
+#     head::Element
+#     δ::StateType # head is before(left,δ=-1) or after(right,δ=+1) another element
+#     loc::WormLocation # see above WormLocation
+# end
+# Worm()::Worm = Worm(Element(),Element(),StateType(0),_at_null)
