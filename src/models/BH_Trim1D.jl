@@ -5,7 +5,7 @@ abstract type BH_Parameters end
     Ly::IndexType = 1 # So far only 2D is supported
     J::f64 = 1.0 # hopping in the parallel direction
     R::f64 = 1.0 # strength of rotation
-    V::f64 = 12.0 # off site repulsion, set to a large value for shaped hard core
+    V::f64 = 10.0 # off site repulsion, set to a large value for shaped hard core
     μ1::f64 = 0.0 # chemical potential A
     μ2::f64 = 0.0 # chemical potential B
 end

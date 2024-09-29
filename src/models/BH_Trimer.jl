@@ -1,3 +1,4 @@
+# Not valid now. Please refer to BH_Trim
 abstract type BH_Parameters end
 @kwdef struct BH_Trimer <: BH_Parameters
     nmax::StateType = 1 # nmax must be implemented
