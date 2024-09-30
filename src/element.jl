@@ -4,10 +4,9 @@ const u64::Type = UInt64
 const u128::Type = UInt128
 const f32::Type = Float32
 const i32::Type = Int32
-const i16::Type = Int32
 const i8::Type = Int8
 const StateType::Type = Int8
-const IndexType::Type = Int16
+const IndexType::Type = Int32
 @inline metro(p)::Bool = rand() < p
 @inline randsign()::Int8 = rand(Bool) ? Int8(1) : Int8(-1)
 function dumptoNamedTuple(x)
