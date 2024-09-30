@@ -54,7 +54,7 @@ function site_diff(H::BH_Trim1D, i, j)::CartesianIndex{4}
     return CartesianIndex(dx, dy, si, sj)
 end
 
-function Wsheet(β::f64, H::BH_Trim1D)
+function Wsheet(β::f64, H::BH_Trim1D)::Wsheet{3}
     @assert H.Ly == 1
     Wsheet(β, zeros(StateType, H.Lx, H.Ly, 2))
 end

@@ -7,7 +7,7 @@ abstract type BH_Parameters end
     Jq::f64 = 1.0 # hopping in the perpendicular direction
     R::f64 = 1.0 # strength of rotation
     U::f64 = 0.0 # on site repulsion, can be zero if nmax==1
-    V::f64 = 12.0 # off site repulsion, set to a large value for shaped hard core
+    V::f64 = 10.0 # off site repulsion, set to a large value for shaped hard core
     μ1::f64 = 0.0 # chemical potential A
     μ2::f64 = 0.0 # chemical potential B
 end
@@ -99,7 +99,7 @@ function site_diff(H::BH_Trim, i, j)::CartesianIndex{4}
     return CartesianIndex(dx, dy, si, sj)
 end
 
-Wsheet(β::f64, H::BH_Trim) = Wsheet(β, zeros(StateType, H.Lx, H.Ly, 2))
+Wsheet(β::f64, H::BH_Trim)::Wsheet{3} = Wsheet(β, zeros(StateType, H.Lx, H.Ly, 2))
 
 function simple_measure!(m::SimpleMeasure, x::Wsheet{3}, H::BH_Trim,
     bond_buffer::Wline)::Nothing
