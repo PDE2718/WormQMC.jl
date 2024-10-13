@@ -3,7 +3,7 @@ function onesimu!(x::Wsheet{N}, H::Ham, m::WormMeasure, ψsnaps::Vector{Array{i8
     cycle_prob::CycleAccumProb,
     time_ther::Second,
     time_simu::Second,
-    sweep_size_limit::Tuple{Int,Int}=(1, 1024),
+    sweep_size_limit::Tuple{Int,Int}=(1, typemax(Int)),
     max_snap::Int=1024,
 )::Nothing where {N, Ham<:BH_Parameters}
     # prepare buffers measurements

@@ -1,7 +1,7 @@
 ## Some update constants
 @kwdef struct UpdateConsts
     Cw::f64 = 0.5
-    Eoff::f64 = 1.0
+    Eoff::f64 = 2.0
     P_del2ins::f64 = 1.0 # ratio p_delete/p_insert
 end
 # const Ecutoff::f64 = 1e3
